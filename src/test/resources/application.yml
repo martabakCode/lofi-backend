@@ -1,0 +1,25 @@
+---
+spring:
+  datasource:
+    url: "jdbc:sqlserver://${DB_HOST:localhost}:${DB_PORT:1433};databaseName=${DB_NAME:lofiapps};encrypt=true;trustServerCertificate=true"
+    username: "${DB_USERNAME:sa}"
+    password: "${DB_PASSWORD:}"
+    driverClassName: "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: "update"
+    properties:
+      hibernate:
+        dialect: "org.hibernate.dialect.SQLServer2012Dialect"
+  data:
+    redis:
+      host: "${REDIS_HOST:localhost}"
+      port: "${REDIS_PORT:6379}"
+  cache:
+    type: "redis"
+  mail:
+    host: "${MAIL_HOST:localhost}"
+    port: "${MAIL_PORT:25}"
+    username: "${MAIL_USERNAME:}"
+    password: "${MAIL_PASSWORD:}"

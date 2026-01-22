@@ -1,0 +1,58 @@
+---
+services:
+  app:
+    build: "."
+    container_name: "lofiapps-api"
+    ports:
+    - "${PORT:-8080}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: "docker"
+      DB_HOST: "${DB_HOST:-sqlserver}"
+      DB_PORT: "${DB_PORT:-1433}"
+      DB_NAME: "${DB_NAME:-lofidb}"
+      DB_USERNAME: "${DB_USERNAME:-sa}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      JWT_SECRET: "${JWT_SECRET}"
+      MAIL_HOST: "${MAIL_HOST}"
+      MAIL_PORT: "${MAIL_PORT}"
+      MAIL_USERNAME: "${MAIL_USERNAME}"
+      MAIL_PASSWORD: "${MAIL_PASSWORD}"
+      REDIS_HOST: "${REDIS_HOST:-redis}"
+      REDIS_PORT: "${REDIS_PORT:-6379}"
+      CLOUDFLARE_R2_ACCESS_KEY_ID: "${CLOUDFLARE_R2_ACCESS_KEY_ID}"
+      CLOUDFLARE_R2_SECRET_ACCESS_KEY: "${CLOUDFLARE_R2_SECRET_ACCESS_KEY}"
+      CLOUDFLARE_R2_ENDPOINT: "${CLOUDFLARE_R2_ENDPOINT}"
+      CLOUDFLARE_R2_BUCKET_NAME: "${CLOUDFLARE_R2_BUCKET_NAME}"
+    depends_on:
+    - "redis"
+    - "sqlserver"
+    restart: "always"
+  redis:
+    image: "redis:alpine"
+    container_name: "lofi-redis"
+    ports:
+    - "${REDIS_PORT:-6379}:6379"
+    restart: "always"
+  redisinsight:
+    image: "redis/redisinsight:latest"
+    container_name: "lofi-redisinsight"
+    ports:
+    - "5540:5540"
+    depends_on:
+    - "redis"
+    restart: "always"
+  sqlserver:
+    image: "mcr.microsoft.com/mssql/server:2022-latest"
+    platform: "linux/amd64"
+    container_name: "lofi-sqlserver"
+    ports:
+    - "1433:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${DB_PASSWORD}"
+      MSSQL_PID: "Developer"
+    volumes:
+    - "sqlserver_data:/var/opt/mssql"
+    restart: "unless-stopped"
+volumes:
+  sqlserver_data: null
