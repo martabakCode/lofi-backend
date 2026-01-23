@@ -96,6 +96,7 @@ public class AuthController {
             .username(userPrincipal.getUsername())
             .branchId(userPrincipal.getBranchId())
             .branchName(userPrincipal.getBranchName())
+            .plafond(userPrincipal.getPlafond())
             .roles(userPrincipal.getRoles())
             .permissions(userPrincipal.getPermissions())
             .build();

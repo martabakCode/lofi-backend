@@ -20,6 +20,7 @@ public class UserPrincipal implements UserDetails {
   @JsonIgnore private String password;
   private UUID branchId;
   private String branchName;
+  private java.math.BigDecimal plafond;
   private Collection<? extends GrantedAuthority> authorities;
 
   public static UserPrincipal create(User user) {
@@ -46,6 +47,9 @@ public class UserPrincipal implements UserDetails {
         user.getPassword(),
         user.getBranch() != null ? user.getBranch().getId() : null,
         user.getBranch() != null ? user.getBranch().getName() : null,
+        user.getProduct() != null
+            ? user.getProduct().getMaxLoanAmount()
+            : java.math.BigDecimal.ZERO,
         authorities);
   }
 

@@ -6,16 +6,6 @@ import com.lofi.lofiapps.model.dto.response.*;
 import com.lofi.lofiapps.model.dto.response.LoanResponse;
 import com.lofi.lofiapps.model.dto.response.PagedResponse;
 import com.lofi.lofiapps.security.service.UserPrincipal;
-import com.lofi.lofiapps.service.impl.loan.ApplyLoanUseCase;
-import com.lofi.lofiapps.service.impl.loan.ApproveLoanUseCase;
-import com.lofi.lofiapps.service.impl.loan.CompleteLoanUseCase;
-import com.lofi.lofiapps.service.impl.loan.DisburseLoanUseCase;
-import com.lofi.lofiapps.service.impl.loan.GetLoanDetailUseCase;
-import com.lofi.lofiapps.service.impl.loan.GetLoansUseCase;
-import com.lofi.lofiapps.service.impl.loan.RejectLoanUseCase;
-import com.lofi.lofiapps.service.impl.loan.ReviewLoanUseCase;
-import com.lofi.lofiapps.service.impl.loan.RollbackLoanUseCase;
-import com.lofi.lofiapps.service.impl.loan.SubmitLoanUseCase;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -30,16 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @io.swagger.v3.oas.annotations.tags.Tag(name = "Loans", description = "Loan Management Endpoints")
 public class LoanController {
-  private final ApplyLoanUseCase applyLoanUseCase;
-  private final GetLoansUseCase getLoansUseCase;
-  private final GetLoanDetailUseCase getLoanDetailUseCase;
-  private final ApproveLoanUseCase approveLoanUseCase;
-  private final RejectLoanUseCase rejectLoanUseCase;
-  private final DisburseLoanUseCase disburseLoanUseCase;
-  private final ReviewLoanUseCase reviewLoanUseCase;
-  private final RollbackLoanUseCase rollbackLoanUseCase;
-  private final SubmitLoanUseCase submitLoanUseCase;
-  private final CompleteLoanUseCase completeLoanUseCase;
+  private final com.lofi.lofiapps.service.LoanService loanService;
 
   @GetMapping
   @io.swagger.v3.oas.annotations.Operation(summary = "Get Loans with pagination and filters")
@@ -49,14 +30,44 @@ public class LoanController {
       @RequestParam(required = false) UUID customerId,
       @org.springframework.data.web.PageableDefault(
               size = 10,
-              sort = "createdAt",
+              sort = "createdDate", // Was createdDate or
+              // submittedAt? UseCase used
+              // default sort.
               direction = org.springframework.data.domain.Sort.Direction.DESC)
           org.springframework.data.domain.Pageable pageable) {
 
     LoanCriteria criteria =
         LoanCriteria.builder().status(status).branchId(branchId).customerId(customerId).build();
 
-    return ResponseEntity.ok(ApiResponse.success(getLoansUseCase.execute(criteria, pageable)));
+    return ResponseEntity.ok(ApiResponse.success(loanService.getLoans(criteria, pageable)));
+  }
+
+  @GetMapping("/me")
+  @PreAuthorize("hasRole('CUSTOMER')")
+  @io.swagger.v3.oas.annotations.Operation(summary = "Get my loans")
+  public ResponseEntity<ApiResponse<PagedResponse<LoanResponse>>> getMyLoans(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @org.springframework.data.web.PageableDefault(
+              size = 10,
+              sort = "createdDate",
+              direction = org.springframework.data.domain.Sort.Direction.DESC)
+          org.springframework.data.domain.Pageable pageable) {
+    return ResponseEntity.ok(
+        ApiResponse.success(loanService.getMyLoans(userPrincipal.getId(), pageable)));
+  }
+
+  @GetMapping("/history")
+  @PreAuthorize("hasRole('CUSTOMER')")
+  @io.swagger.v3.oas.annotations.Operation(summary = "Get my loan history")
+  public ResponseEntity<ApiResponse<PagedResponse<LoanResponse>>> getLoanHistory(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @org.springframework.data.web.PageableDefault(
+              size = 10,
+              sort = "createdDate",
+              direction = org.springframework.data.domain.Sort.Direction.DESC)
+          org.springframework.data.domain.Pageable pageable) {
+    return ResponseEntity.ok(
+        ApiResponse.success(loanService.getLoanHistory(userPrincipal.getId(), pageable)));
   }
 
   @PostMapping("/{id}/submit")
@@ -66,7 +77,8 @@ public class LoanController {
       @PathVariable UUID id, @AuthenticationPrincipal UserPrincipal userPrincipal) {
     return ResponseEntity.ok(
         ApiResponse.success(
-            submitLoanUseCase.execute(id, userPrincipal.getId()), "Loan submitted successfully"));
+            loanService.submitLoan(id, userPrincipal.getUsername()),
+            "Loan submitted successfully"));
   }
 
   @PostMapping("/{id}/review")
@@ -78,7 +90,7 @@ public class LoanController {
       @AuthenticationPrincipal UserPrincipal userPrincipal) {
     return ResponseEntity.ok(
         ApiResponse.success(
-            reviewLoanUseCase.execute(id, userPrincipal.getUsername(), request.getNotes()),
+            loanService.reviewLoan(id, userPrincipal.getUsername(), request.getNotes()),
             "Loan reviewed successfully"));
   }
 
@@ -96,7 +108,7 @@ public class LoanController {
             : "Approved by Branch Manager";
     return ResponseEntity.ok(
         ApiResponse.success(
-            approveLoanUseCase.execute(id, userPrincipal.getUsername(), notes),
+            loanService.approveLoan(id, userPrincipal.getUsername(), notes),
             "Loan approved successfully"));
   }
 
@@ -110,7 +122,7 @@ public class LoanController {
       @AuthenticationPrincipal UserPrincipal userPrincipal) {
     return ResponseEntity.ok(
         ApiResponse.success(
-            rejectLoanUseCase.execute(id, userPrincipal.getUsername(), request.getReason(), false),
+            loanService.rejectLoan(id, userPrincipal.getUsername(), request.getReason()),
             "Loan rejected successfully"));
   }
 
@@ -123,7 +135,7 @@ public class LoanController {
       @AuthenticationPrincipal UserPrincipal userPrincipal) {
     return ResponseEntity.ok(
         ApiResponse.success(
-            rejectLoanUseCase.execute(id, userPrincipal.getUsername(), request.getReason(), true),
+            loanService.cancelLoan(id, userPrincipal.getUsername(), request.getReason()),
             "Loan cancelled successfully"));
   }
 
@@ -137,7 +149,7 @@ public class LoanController {
       @AuthenticationPrincipal UserPrincipal userPrincipal) {
     return ResponseEntity.ok(
         ApiResponse.success(
-            rollbackLoanUseCase.execute(id, userPrincipal.getUsername(), request.getNotes()),
+            loanService.rollbackLoan(id, userPrincipal.getUsername(), request.getNotes()),
             "Loan rolled back successfully"));
   }
 
@@ -148,9 +160,10 @@ public class LoanController {
       @PathVariable UUID id,
       @Valid @RequestBody com.lofi.lofiapps.model.dto.request.DisbursementRequest request,
       @AuthenticationPrincipal UserPrincipal userPrincipal) {
+    // Note: service.disburseLoan expects notes/reference in last param
     return ResponseEntity.ok(
         ApiResponse.success(
-            disburseLoanUseCase.execute(id, request, userPrincipal.getUsername()),
+            loanService.disburseLoan(id, userPrincipal.getUsername(), request.getReferenceNumber()),
             "Loan disbursed successfully"));
   }
 
@@ -161,7 +174,7 @@ public class LoanController {
       @PathVariable UUID id, @AuthenticationPrincipal UserPrincipal userPrincipal) {
     return ResponseEntity.ok(
         ApiResponse.success(
-            completeLoanUseCase.execute(id, userPrincipal.getUsername()),
+            loanService.completeLoan(id, userPrincipal.getUsername()),
             "Loan completed successfully"));
   }
 
@@ -173,12 +186,40 @@ public class LoanController {
       @AuthenticationPrincipal UserPrincipal userPrincipal) {
     return ResponseEntity.ok(
         ApiResponse.success(
-            applyLoanUseCase.execute(request, userPrincipal.getId()), "Loan applied successfully"));
+            loanService.applyLoan(request, userPrincipal.getId(), userPrincipal.getUsername()),
+            "Loan applied successfully"));
   }
 
   @GetMapping("/{id}")
   @io.swagger.v3.oas.annotations.Operation(summary = "Get loan details")
   public ResponseEntity<ApiResponse<LoanResponse>> getLoanDetail(@PathVariable UUID id) {
-    return ResponseEntity.ok(ApiResponse.success(getLoanDetailUseCase.execute(id)));
+    return ResponseEntity.ok(ApiResponse.success(loanService.getLoanDetail(id)));
+  }
+
+  @GetMapping("/{id}/analysis")
+  @PreAuthorize(
+      "hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('MARKETING') or hasRole('BRANCH_MANAGER')")
+  @io.swagger.v3.oas.annotations.Operation(summary = "Get AI Analysis for a loan")
+  public ResponseEntity<ApiResponse<com.lofi.lofiapps.model.dto.response.LoanAnalysisResponse>>
+      analyzeLoan(@PathVariable UUID id) {
+    return ResponseEntity.ok(ApiResponse.success(loanService.analyzeLoan(id)));
+  }
+
+  @GetMapping("/{id}/analysis/branch-support")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('BRANCH_MANAGER')")
+  @io.swagger.v3.oas.annotations.Operation(summary = "Get AI Branch Decision Support for a loan")
+  public ResponseEntity<
+          ApiResponse<com.lofi.lofiapps.model.dto.response.BranchManagerSupportResponse>>
+      analyzeLoanBranchSupport(@PathVariable UUID id) {
+    return ResponseEntity.ok(ApiResponse.success(loanService.analyzeLoanBranchSupport(id)));
+  }
+
+  @GetMapping("/{id}/analysis/risk-evaluation")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('BACKOFFICE')")
+  @io.swagger.v3.oas.annotations.Operation(summary = "Get AI Risk Evaluation for Back Office")
+  public ResponseEntity<
+          ApiResponse<com.lofi.lofiapps.model.dto.response.BackOfficeRiskEvaluationResponse>>
+      analyzeRiskEvaluation(@PathVariable UUID id) {
+    return ResponseEntity.ok(ApiResponse.success(loanService.analyzeBackOfficeRiskEvaluation(id)));
   }
 }

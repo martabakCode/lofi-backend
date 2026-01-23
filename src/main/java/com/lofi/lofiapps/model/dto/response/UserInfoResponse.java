@@ -18,5 +18,6 @@ public class UserInfoResponse {
   private UUID branchId;
   private String branchName;
   private List<String> roles;
+  private java.math.BigDecimal plafond;
   private List<String> permissions;
 }

@@ -25,4 +25,5 @@ public class LoanResponse {
   private LocalDateTime disbursedAt;
   private java.util.List<com.lofi.lofiapps.model.dto.response.DocumentResponse> documents;
   private String disbursementReference;
+  private LoanAnalysisResponse aiAnalysis;
 }

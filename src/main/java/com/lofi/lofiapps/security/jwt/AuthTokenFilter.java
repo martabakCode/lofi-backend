@@ -57,6 +57,17 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         // identifier (usually username/email)
         String email = jwtUtils.getEmailFromJwtToken(jwt);
 
+        if (email == null) {
+          log.warn(
+              "Access denied: Token verification failed - Missing email claim (possibly a Refresh Token)");
+          response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+          response
+              .getWriter()
+              .write(
+                  "Invalid access token: Missing identity claims. Are you using a Refresh Token?");
+          return;
+        }
+
         UserDetails userDetails = userDetailsService.loadUserByUsername(email);
         UsernamePasswordAuthenticationToken authentication =
             new UsernamePasswordAuthenticationToken(
@@ -67,6 +78,15 @@ public class AuthTokenFilter extends OncePerRequestFilter {
       }
     } catch (Exception e) {
       log.error("Cannot set user authentication: {}", e);
+      // If an error occurs during authentication (e.g., Redis down, DB down),
+      // we should probably let the user know instead of a generic 401.
+      // However, we must be careful not to leak too much info.
+      // But for "Unauthorized" vs "Server Error", this distinction is important.
+      if (!response.isCommitted()) {
+        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        response.getWriter().write("Authentication service error: " + e.getMessage());
+      }
+      return; // Stop filter chain
     }
 
     filterChain.doFilter(request, response);

@@ -1,5 +1,7 @@
 package com.lofi.lofiapps.service.impl.notification;
 
+import com.lofi.lofiapps.model.dto.response.EmailDraftResponse;
+import com.lofi.lofiapps.model.dto.response.NotificationGenerationResponse;
 import com.lofi.lofiapps.model.entity.Notification;
 import com.lofi.lofiapps.model.enums.LoanStatus;
 import com.lofi.lofiapps.repository.NotificationRepository;
@@ -15,6 +17,8 @@ import org.springframework.stereotype.Service;
 public class LogNotificationService implements NotificationService {
 
   private final NotificationRepository notificationRepository;
+  private final NotificationGenerationUseCase notificationGenerationUseCase;
+  private final EmailDraftGenerationUseCase emailDraftGenerationUseCase;
 
   @Override
   public void notifyForgotPassword(String email, String token) {
@@ -58,15 +62,30 @@ public class LogNotificationService implements NotificationService {
 
   @Override
   public void notifyLoanStatusChange(UUID userId, LoanStatus newStatus) {
-    String title = "Loan Status Update";
-    String message = "Your loan status has been updated to: " + newStatus;
+    // Generate AI-powered notification content
+    NotificationGenerationResponse aiContent =
+        notificationGenerationUseCase.execute("LOAN_STATUS_CHANGE", "CUSTOMER");
+
+    String title = aiContent.getTitle();
+    String message = aiContent.getMessage() + " [Status: " + newStatus + "]";
+
     sendInAppNotification(userId, title, message, "LOAN_STATUS", "/loans");
 
-    // Email is mandatory for certain status changes
+    // Email is mandatory for certain status changes, using AI for email draft
     if (newStatus == LoanStatus.APPROVED
         || newStatus == LoanStatus.REJECTED
         || newStatus == LoanStatus.CANCELLED) {
-      sendEmail("user@example.com", title, message); // Should get actual user email
+
+      EmailDraftResponse emailDraft = emailDraftGenerationUseCase.execute("LOAN_" + newStatus);
+      sendEmail(
+          "user@example.com", // In real apps, fetch user email
+          emailDraft.getSubject(),
+          emailDraft.getBodyHtml());
+    }
+
+    if (newStatus == LoanStatus.SUBMITTED) {
+      log.info(
+          "[PUSH] To: Branch Manager & Marketing, Title: New Loan Application, Message: A new loan has been submitted.");
     }
   }
 }

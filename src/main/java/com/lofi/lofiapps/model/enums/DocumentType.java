@@ -7,5 +7,6 @@ public enum DocumentType {
   PAYSLIP,
   PROOFOFRESIDENCE,
   PROFILE_PICTURE,
+  BANK_STATEMENT,
   OTHER
 }
