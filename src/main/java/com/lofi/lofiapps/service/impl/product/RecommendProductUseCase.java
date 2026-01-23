@@ -1,8 +1,8 @@
 package com.lofi.lofiapps.service.impl.product;
 
-import com.lofi.lofiapps.model.dto.response.ProductRecommendationResponse;
-import com.lofi.lofiapps.model.entity.Product;
-import com.lofi.lofiapps.model.entity.User;
+import com.lofi.lofiapps.dto.response.ProductRecommendationResponse;
+import com.lofi.lofiapps.entity.Product;
+import com.lofi.lofiapps.entity.User;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.ArrayList;

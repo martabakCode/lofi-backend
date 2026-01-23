@@ -1,9 +1,8 @@
 package com.lofi.lofiapps.controller;
 
-import com.lofi.lofiapps.model.dto.response.LoanKpiResponse;
-import com.lofi.lofiapps.model.dto.response.SlaReportResponse;
-import com.lofi.lofiapps.service.impl.report.GetLoanKpisUseCase;
-import com.lofi.lofiapps.service.impl.report.GetSlaReportUseCase;
+import com.lofi.lofiapps.dto.response.LoanKpiResponse;
+import com.lofi.lofiapps.dto.response.SlaReportResponse;
+import com.lofi.lofiapps.service.ReportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.UUID;
@@ -17,23 +16,20 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Tag(name = "Reports", description = "KPI and SLA Report Endpoints")
 public class ReportController {
-  private final GetLoanKpisUseCase getLoanKpisUseCase;
-  private final GetSlaReportUseCase getSlaReportUseCase;
-  private final com.lofi.lofiapps.service.impl.export.ExcelExportService excelExportService;
+  private final ReportService reportService;
 
   @GetMapping("/kpis")
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
   @Operation(summary = "Get Loan KPIs")
   public ResponseEntity<LoanKpiResponse> getKpis() {
-    return ResponseEntity.ok(getLoanKpisUseCase.execute());
+    return ResponseEntity.ok(reportService.getLoanKpis());
   }
 
   @GetMapping("/kpis/export")
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
   @Operation(summary = "Export Loan KPIs to Excel")
   public ResponseEntity<byte[]> exportKpis() {
-    LoanKpiResponse kpis = getLoanKpisUseCase.execute();
-    byte[] excelFile = excelExportService.exportLoanKpis(kpis);
+    byte[] excelFile = reportService.exportLoanKpis();
 
     return ResponseEntity.ok()
         .header(
@@ -49,15 +45,14 @@ public class ReportController {
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MARKETING', 'BRANCH_MANAGER')")
   @Operation(summary = "Get SLA Report for a specific loan")
   public ResponseEntity<SlaReportResponse> getSlaReport(@PathVariable UUID loanId) {
-    return ResponseEntity.ok(getSlaReportUseCase.execute(loanId));
+    return ResponseEntity.ok(reportService.getSlaReport(loanId));
   }
 
   @GetMapping("/sla/{loanId}/export")
   @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MARKETING', 'BRANCH_MANAGER')")
   @Operation(summary = "Export SLA Report for a specific loan to Excel")
   public ResponseEntity<byte[]> exportSlaReport(@PathVariable UUID loanId) {
-    SlaReportResponse slaReport = getSlaReportUseCase.execute(loanId);
-    byte[] excelFile = excelExportService.exportSlaReport(slaReport);
+    byte[] excelFile = reportService.exportSlaReport(loanId);
 
     return ResponseEntity.ok()
         .header(

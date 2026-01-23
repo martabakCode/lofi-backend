@@ -1,7 +1,7 @@
 package com.lofi.lofiapps.service.impl.loan;
 
-import com.lofi.lofiapps.model.dto.response.BranchManagerSupportResponse;
-import com.lofi.lofiapps.model.entity.Loan;
+import com.lofi.lofiapps.dto.response.BranchManagerSupportResponse;
+import com.lofi.lofiapps.entity.Loan;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;

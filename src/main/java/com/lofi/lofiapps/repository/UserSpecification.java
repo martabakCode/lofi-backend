@@ -1,14 +1,14 @@
 package com.lofi.lofiapps.repository;
 
-import com.lofi.lofiapps.model.dto.request.UserCriteria;
-import com.lofi.lofiapps.model.entity.JpaUser;
+import com.lofi.lofiapps.dto.request.UserCriteria;
+import com.lofi.lofiapps.entity.User;
 import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.data.jpa.domain.Specification;
 
 public class UserSpecification {
-  public static Specification<JpaUser> withCriteria(UserCriteria criteria) {
+  public static Specification<User> withCriteria(UserCriteria criteria) {
     return (root, query, criteriaBuilder) -> {
       List<Predicate> predicates = new ArrayList<>();
 

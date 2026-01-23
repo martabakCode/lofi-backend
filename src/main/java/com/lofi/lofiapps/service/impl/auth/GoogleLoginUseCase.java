@@ -1,12 +1,12 @@
 package com.lofi.lofiapps.service.impl.auth;
 
-import com.lofi.lofiapps.model.dto.request.GoogleLoginRequest;
-import com.lofi.lofiapps.model.dto.response.LoginResponse;
-import com.lofi.lofiapps.model.entity.Branch;
-import com.lofi.lofiapps.model.entity.Role;
-import com.lofi.lofiapps.model.entity.User;
-import com.lofi.lofiapps.model.enums.RoleName;
-import com.lofi.lofiapps.model.enums.UserStatus;
+import com.lofi.lofiapps.dto.request.GoogleLoginRequest;
+import com.lofi.lofiapps.dto.response.LoginResponse;
+import com.lofi.lofiapps.entity.Branch;
+import com.lofi.lofiapps.entity.Role;
+import com.lofi.lofiapps.entity.User;
+import com.lofi.lofiapps.enums.RoleName;
+import com.lofi.lofiapps.enums.UserStatus;
 import com.lofi.lofiapps.repository.BranchRepository;
 import com.lofi.lofiapps.repository.RoleRepository;
 import com.lofi.lofiapps.repository.UserRepository;

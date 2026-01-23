@@ -1,8 +1,8 @@
 package com.lofi.lofiapps.service.impl.rbac;
 
 import com.lofi.lofiapps.exception.ResourceNotFoundException;
-import com.lofi.lofiapps.repository.JpaRoleRepository;
-import com.lofi.lofiapps.repository.JpaUserRepository;
+import com.lofi.lofiapps.repository.RoleRepository;
+import com.lofi.lofiapps.repository.UserRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -11,8 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class DeleteRoleUseCase {
-  private final JpaRoleRepository roleRepository;
-  private final JpaUserRepository userRepository;
+  private final RoleRepository roleRepository;
+  private final UserRepository userRepository;
 
   @Transactional
   public void execute(UUID roleId) {

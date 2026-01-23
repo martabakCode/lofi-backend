@@ -1,6 +1,6 @@
 package com.lofi.lofiapps.service.impl.rbac;
 
-import com.lofi.lofiapps.model.dto.response.BranchResponse;
+import com.lofi.lofiapps.dto.response.BranchResponse;
 import com.lofi.lofiapps.repository.BranchRepository;
 import java.util.List;
 import java.util.stream.Collectors;

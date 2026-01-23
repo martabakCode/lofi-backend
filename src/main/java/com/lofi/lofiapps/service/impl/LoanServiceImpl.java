@@ -1,26 +1,27 @@
 package com.lofi.lofiapps.service.impl;
 
+import com.lofi.lofiapps.dto.request.LoanCriteria;
+import com.lofi.lofiapps.dto.request.LoanRequest;
+import com.lofi.lofiapps.dto.response.BackOfficeRiskEvaluationResponse;
+import com.lofi.lofiapps.dto.response.BranchManagerSupportResponse;
+import com.lofi.lofiapps.dto.response.DocumentResponse;
+import com.lofi.lofiapps.dto.response.LoanAnalysisResponse;
+import com.lofi.lofiapps.dto.response.LoanResponse;
+import com.lofi.lofiapps.dto.response.MarketingLoanReviewResponse;
+import com.lofi.lofiapps.dto.response.PagedResponse;
+import com.lofi.lofiapps.dto.response.ProductResponse;
+import com.lofi.lofiapps.entity.ApprovalHistory;
+import com.lofi.lofiapps.entity.Loan;
+import com.lofi.lofiapps.entity.Product;
+import com.lofi.lofiapps.entity.User;
+import com.lofi.lofiapps.enums.ApprovalStage;
+import com.lofi.lofiapps.enums.DocumentType;
+import com.lofi.lofiapps.enums.LoanStatus;
+import com.lofi.lofiapps.enums.UserStatus;
 import com.lofi.lofiapps.exception.ResourceNotFoundException;
 import com.lofi.lofiapps.mapper.LoanDtoMapper;
-import com.lofi.lofiapps.model.dto.request.LoanCriteria;
-import com.lofi.lofiapps.model.dto.request.LoanRequest;
-import com.lofi.lofiapps.model.dto.response.BackOfficeRiskEvaluationResponse;
-import com.lofi.lofiapps.model.dto.response.BranchManagerSupportResponse;
-import com.lofi.lofiapps.model.dto.response.DocumentResponse;
-import com.lofi.lofiapps.model.dto.response.LoanAnalysisResponse;
-import com.lofi.lofiapps.model.dto.response.LoanResponse;
-import com.lofi.lofiapps.model.dto.response.MarketingLoanReviewResponse;
-import com.lofi.lofiapps.model.dto.response.PagedResponse;
-import com.lofi.lofiapps.model.dto.response.ProductResponse;
-import com.lofi.lofiapps.model.entity.ApprovalHistory;
-import com.lofi.lofiapps.model.entity.Loan;
-import com.lofi.lofiapps.model.entity.Product;
-import com.lofi.lofiapps.model.entity.User;
-import com.lofi.lofiapps.model.enums.ApprovalStage;
-import com.lofi.lofiapps.model.enums.LoanStatus;
-import com.lofi.lofiapps.model.enums.UserStatus;
 import com.lofi.lofiapps.repository.ApprovalHistoryRepository;
-import com.lofi.lofiapps.repository.JpaDocumentRepository;
+import com.lofi.lofiapps.repository.DocumentRepository;
 import com.lofi.lofiapps.repository.LoanRepository;
 import com.lofi.lofiapps.repository.ProductRepository;
 import com.lofi.lofiapps.repository.UserRepository;
@@ -33,13 +34,16 @@ import com.lofi.lofiapps.service.impl.loan.AnalyzeLoanUseCase;
 import com.lofi.lofiapps.service.impl.loan.BackOfficeRiskEvaluationUseCase;
 import com.lofi.lofiapps.service.impl.loan.BranchManagerSupportUseCase;
 import com.lofi.lofiapps.service.impl.loan.MarketingReviewLoanUseCase;
+import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,7 +55,7 @@ public class LoanServiceImpl implements LoanService {
   private final UserRepository userRepository;
   private final ProductRepository productRepository;
   private final ApprovalHistoryRepository approvalHistoryRepository;
-  private final JpaDocumentRepository documentRepository;
+  private final DocumentRepository documentRepository;
   private final LoanDtoMapper loanDtoMapper;
 
   private final NotificationService notificationService;
@@ -70,7 +74,7 @@ public class LoanServiceImpl implements LoanService {
       UserRepository userRepository,
       ProductRepository productRepository,
       ApprovalHistoryRepository approvalHistoryRepository,
-      JpaDocumentRepository documentRepository,
+      DocumentRepository documentRepository,
       LoanDtoMapper loanDtoMapper,
       NotificationService notificationService,
       RoleActionGuard roleActionGuard,
@@ -165,7 +169,21 @@ public class LoanServiceImpl implements LoanService {
 
   @Override
   public PagedResponse<LoanResponse> getLoans(LoanCriteria criteria, Pageable pageable) {
-    Page<Loan> page = loanRepository.findAll(criteria, pageable);
+    Specification<Loan> spec =
+        (root, query, cb) -> {
+          List<Predicate> predicates = new ArrayList<>();
+          if (criteria.getStatus() != null) {
+            predicates.add(cb.equal(root.get("loanStatus"), criteria.getStatus()));
+          }
+          if (criteria.getCustomerId() != null) {
+            predicates.add(cb.equal(root.get("customer").get("id"), criteria.getCustomerId()));
+          }
+          if (criteria.getBranchId() != null) {
+            predicates.add(cb.equal(root.get("branch").get("id"), criteria.getBranchId()));
+          }
+          return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    Page<Loan> page = loanRepository.findAll(spec, pageable);
 
     List<LoanResponse> items =
         page.getContent().stream().map(this::mapToResponse).collect(Collectors.toList());
@@ -558,15 +576,9 @@ public class LoanServiceImpl implements LoanService {
   }
 
   private void validateDocuments(UUID loanId) {
-    long ktpCount =
-        documentRepository.countByLoanIdAndDocumentType(
-            loanId, com.lofi.lofiapps.model.enums.DocumentType.KTP);
-    long kkCount =
-        documentRepository.countByLoanIdAndDocumentType(
-            loanId, com.lofi.lofiapps.model.enums.DocumentType.KK);
-    long npwpCount =
-        documentRepository.countByLoanIdAndDocumentType(
-            loanId, com.lofi.lofiapps.model.enums.DocumentType.NPWP);
+    long ktpCount = documentRepository.countByLoanIdAndDocumentType(loanId, DocumentType.KTP);
+    long kkCount = documentRepository.countByLoanIdAndDocumentType(loanId, DocumentType.KK);
+    long npwpCount = documentRepository.countByLoanIdAndDocumentType(loanId, DocumentType.NPWP);
 
     if (ktpCount == 0 || kkCount == 0 || npwpCount == 0) {
       throw new IllegalStateException(

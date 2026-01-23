@@ -1,15 +1,15 @@
 package com.lofi.lofiapps.config;
 
-import com.lofi.lofiapps.model.entity.JpaBranch;
-import com.lofi.lofiapps.model.entity.JpaProduct;
-import com.lofi.lofiapps.model.entity.JpaRole;
-import com.lofi.lofiapps.model.entity.JpaUser;
-import com.lofi.lofiapps.model.enums.RoleName;
-import com.lofi.lofiapps.model.enums.UserStatus;
-import com.lofi.lofiapps.repository.JpaBranchRepository;
-import com.lofi.lofiapps.repository.JpaProductRepository;
-import com.lofi.lofiapps.repository.JpaRoleRepository;
-import com.lofi.lofiapps.repository.JpaUserRepository;
+import com.lofi.lofiapps.entity.Branch;
+import com.lofi.lofiapps.entity.Product;
+import com.lofi.lofiapps.entity.Role;
+import com.lofi.lofiapps.entity.User;
+import com.lofi.lofiapps.enums.RoleName;
+import com.lofi.lofiapps.enums.UserStatus;
+import com.lofi.lofiapps.repository.BranchRepository;
+import com.lofi.lofiapps.repository.ProductRepository;
+import com.lofi.lofiapps.repository.RoleRepository;
+import com.lofi.lofiapps.repository.UserRepository;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashSet;
@@ -26,10 +26,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class DataInitializer {
 
-  private final JpaRoleRepository roleRepository;
-  private final JpaUserRepository userRepository;
-  private final JpaBranchRepository branchRepository;
-  private final JpaProductRepository productRepository;
+  private final RoleRepository roleRepository;
+  private final UserRepository userRepository;
+  private final BranchRepository branchRepository;
+  private final ProductRepository productRepository;
   private final PasswordEncoder passwordEncoder;
 
   @Bean
@@ -42,7 +42,7 @@ public class DataInitializer {
       initRoles();
 
       // 2. Branch
-      JpaBranch branch = initBranch();
+      Branch branch = initBranch();
 
       // 3. Product
       initProduct();
@@ -57,16 +57,16 @@ public class DataInitializer {
   private void initRoles() {
     for (RoleName roleName : RoleName.values()) {
       if (roleRepository.findByName(roleName).isEmpty()) {
-        roleRepository.save(JpaRole.builder().name(roleName).build());
+        roleRepository.save(Role.builder().name(roleName).build());
         log.info("Created Role: {}", roleName);
       }
     }
   }
 
-  private JpaBranch initBranch() {
+  private Branch initBranch() {
     if (branchRepository.count() == 0) {
-      JpaBranch branch =
-          JpaBranch.builder()
+      Branch branch =
+          Branch.builder()
               .name("Headquarters")
               .address("123 Main St")
               .city("Jakarta")
@@ -81,8 +81,8 @@ public class DataInitializer {
 
   private void initProduct() {
     if (productRepository.count() == 0) {
-      JpaProduct product =
-          JpaProduct.builder()
+      Product product =
+          Product.builder()
               .productCode("KTA-001")
               .productName("Kredit Tanpa Agunan")
               .description("Fast cash loan without collateral")
@@ -99,16 +99,16 @@ public class DataInitializer {
     }
   }
 
-  private void initAdminUser(JpaBranch branch) {
+  private void initAdminUser(Branch branch) {
     String email = "admin@lofi.test";
     if (!userRepository.existsByEmail(email) && !userRepository.existsByUsername("admin")) {
-      JpaRole adminRole =
+      Role adminRole =
           roleRepository
               .findByName(RoleName.ROLE_SUPER_ADMIN)
               .orElseThrow(() -> new RuntimeException("Role Admin not found"));
 
-      JpaUser admin =
-          JpaUser.builder()
+      User admin =
+          User.builder()
               .username("admin")
               .email(email)
               .password(passwordEncoder.encode("Password123!"))

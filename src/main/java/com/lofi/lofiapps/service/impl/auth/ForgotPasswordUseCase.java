@@ -1,7 +1,7 @@
 package com.lofi.lofiapps.service.impl.auth;
 
-import com.lofi.lofiapps.model.dto.request.ForgotPasswordRequest;
-import com.lofi.lofiapps.model.entity.User;
+import com.lofi.lofiapps.dto.request.ForgotPasswordRequest;
+import com.lofi.lofiapps.entity.User;
 import com.lofi.lofiapps.repository.UserRepository;
 import com.lofi.lofiapps.service.NotificationService;
 import java.util.UUID;

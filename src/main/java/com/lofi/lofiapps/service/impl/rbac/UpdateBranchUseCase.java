@@ -1,9 +1,9 @@
 package com.lofi.lofiapps.service.impl.rbac;
 
+import com.lofi.lofiapps.dto.request.CreateBranchRequest;
+import com.lofi.lofiapps.dto.response.BranchResponse;
+import com.lofi.lofiapps.entity.Branch;
 import com.lofi.lofiapps.exception.ResourceNotFoundException;
-import com.lofi.lofiapps.model.dto.request.CreateBranchRequest;
-import com.lofi.lofiapps.model.dto.response.BranchResponse;
-import com.lofi.lofiapps.model.entity.Branch;
 import com.lofi.lofiapps.repository.BranchRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;

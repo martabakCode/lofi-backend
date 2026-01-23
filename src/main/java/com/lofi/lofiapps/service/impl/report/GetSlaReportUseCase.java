@@ -1,9 +1,9 @@
 package com.lofi.lofiapps.service.impl.report;
 
+import com.lofi.lofiapps.dto.response.SlaReportResponse;
+import com.lofi.lofiapps.entity.ApprovalHistory;
+import com.lofi.lofiapps.entity.Loan;
 import com.lofi.lofiapps.exception.ResourceNotFoundException;
-import com.lofi.lofiapps.model.dto.response.SlaReportResponse;
-import com.lofi.lofiapps.model.entity.ApprovalHistory;
-import com.lofi.lofiapps.model.entity.Loan;
 import com.lofi.lofiapps.repository.ApprovalHistoryRepository;
 import com.lofi.lofiapps.repository.LoanRepository;
 import java.time.Duration;

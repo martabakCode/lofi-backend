@@ -1,7 +1,7 @@
 package com.lofi.lofiapps.service.impl.auth;
 
-import com.lofi.lofiapps.model.dto.request.LoginRequest;
-import com.lofi.lofiapps.model.dto.response.LoginResponse;
+import com.lofi.lofiapps.dto.request.LoginRequest;
+import com.lofi.lofiapps.dto.response.LoginResponse;
 import com.lofi.lofiapps.security.jwt.JwtUtils;
 import com.lofi.lofiapps.security.service.UserPrincipal;
 import lombok.RequiredArgsConstructor;
@@ -34,9 +34,9 @@ public class LoginUseCase {
     // Revoke existing tokens
     refreshTokenRepository.deleteByUserId(userPrincipal.getId());
 
-    com.lofi.lofiapps.model.entity.RefreshToken refreshToken =
-        com.lofi.lofiapps.model.entity.RefreshToken.builder()
-            .user(com.lofi.lofiapps.model.entity.User.builder().id(userPrincipal.getId()).build())
+    com.lofi.lofiapps.entity.RefreshToken refreshToken =
+        com.lofi.lofiapps.entity.RefreshToken.builder()
+            .user(com.lofi.lofiapps.entity.User.builder().id(userPrincipal.getId()).build())
             .token(refreshTokenStr)
             .expiryDate(java.time.Instant.now().plusMillis(refreshExpiration))
             .revoked(false)

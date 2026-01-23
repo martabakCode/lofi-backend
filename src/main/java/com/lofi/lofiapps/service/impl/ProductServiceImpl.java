@@ -1,12 +1,12 @@
 package com.lofi.lofiapps.service.impl;
 
+import com.lofi.lofiapps.dto.request.CreateProductRequest;
+import com.lofi.lofiapps.dto.response.PagedResponse;
+import com.lofi.lofiapps.dto.response.ProductRecommendationResponse;
+import com.lofi.lofiapps.dto.response.ProductResponse;
+import com.lofi.lofiapps.entity.Product;
+import com.lofi.lofiapps.entity.User;
 import com.lofi.lofiapps.mapper.ProductDtoMapper;
-import com.lofi.lofiapps.model.dto.request.CreateProductRequest;
-import com.lofi.lofiapps.model.dto.response.PagedResponse;
-import com.lofi.lofiapps.model.dto.response.ProductRecommendationResponse;
-import com.lofi.lofiapps.model.dto.response.ProductResponse;
-import com.lofi.lofiapps.model.entity.Product;
-import com.lofi.lofiapps.model.entity.User;
 import com.lofi.lofiapps.repository.ProductRepository;
 import com.lofi.lofiapps.repository.UserRepository;
 import com.lofi.lofiapps.service.ProductService;
@@ -42,7 +42,12 @@ public class ProductServiceImpl implements ProductService {
   @Override
   @Transactional(readOnly = true)
   public PagedResponse<ProductResponse> getProducts(Boolean isActive, Pageable pageable) {
-    Page<Product> page = productRepository.findAll(isActive, pageable);
+    Page<Product> page;
+    if (isActive != null) {
+      page = productRepository.findByIsActive(isActive, pageable);
+    } else {
+      page = productRepository.findAll(pageable);
+    }
 
     List<ProductResponse> items =
         page.getContent().stream().map(productDtoMapper::toResponse).collect(Collectors.toList());
@@ -58,7 +63,7 @@ public class ProductServiceImpl implements ProductService {
             .findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
-    List<Product> products = productRepository.findAllActive();
+    List<Product> products = productRepository.findByIsActiveTrue();
 
     return recommendProductUseCase.execute(user, products);
   }

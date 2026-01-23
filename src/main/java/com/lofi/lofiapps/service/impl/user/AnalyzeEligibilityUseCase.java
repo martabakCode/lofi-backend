@@ -1,7 +1,7 @@
 package com.lofi.lofiapps.service.impl.user;
 
-import com.lofi.lofiapps.model.dto.response.EligibilityAnalysisResponse;
-import com.lofi.lofiapps.model.entity.User;
+import com.lofi.lofiapps.dto.response.EligibilityAnalysisResponse;
+import com.lofi.lofiapps.entity.User;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;

@@ -1,7 +1,7 @@
 package com.lofi.lofiapps.service.impl.auth;
 
-import com.lofi.lofiapps.model.dto.request.ResetPasswordRequest;
-import com.lofi.lofiapps.model.entity.User;
+import com.lofi.lofiapps.dto.request.ResetPasswordRequest;
+import com.lofi.lofiapps.entity.User;
 import com.lofi.lofiapps.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;

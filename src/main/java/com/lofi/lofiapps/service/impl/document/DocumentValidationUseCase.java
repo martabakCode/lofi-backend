@@ -1,7 +1,7 @@
 package com.lofi.lofiapps.service.impl.document;
 
-import com.lofi.lofiapps.model.dto.response.DocumentValidationResponse;
-import com.lofi.lofiapps.model.entity.JpaDocument;
+import com.lofi.lofiapps.dto.response.DocumentValidationResponse;
+import com.lofi.lofiapps.entity.Document;
 import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +37,7 @@ public class DocumentValidationUseCase {
    * @param documents list of documents to validate
    * @return document validation response with issues and recommendations
    */
-  public DocumentValidationResponse execute(List<JpaDocument> documents) {
+  public DocumentValidationResponse execute(List<Document> documents) {
     log.info("Executing DocumentValidationUseCase for {} documents", documents.size());
 
     // Per Section 9 - Basic metadata validation

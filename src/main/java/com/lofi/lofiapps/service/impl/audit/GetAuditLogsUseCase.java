@@ -1,9 +1,9 @@
 package com.lofi.lofiapps.service.impl.audit;
 
-import com.lofi.lofiapps.model.dto.response.AuditLogResponse;
-import com.lofi.lofiapps.model.dto.response.PagedResponse;
-import com.lofi.lofiapps.model.entity.JpaAuditLog;
-import com.lofi.lofiapps.repository.JpaAuditLogRepository;
+import com.lofi.lofiapps.dto.response.AuditLogResponse;
+import com.lofi.lofiapps.dto.response.PagedResponse;
+import com.lofi.lofiapps.entity.AuditLog;
+import com.lofi.lofiapps.repository.AuditLogRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -14,10 +14,10 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class GetAuditLogsUseCase {
-  private final JpaAuditLogRepository auditLogRepository;
+  private final AuditLogRepository auditLogRepository;
 
   public PagedResponse<AuditLogResponse> execute(Pageable pageable) {
-    Page<JpaAuditLog> page = auditLogRepository.findAll(pageable);
+    Page<AuditLog> page = auditLogRepository.findAll(pageable);
 
     List<AuditLogResponse> items =
         page.getContent().stream().map(this::mapToResponse).collect(Collectors.toList());
@@ -34,7 +34,7 @@ public class GetAuditLogsUseCase {
         .build();
   }
 
-  private AuditLogResponse mapToResponse(JpaAuditLog log) {
+  private AuditLogResponse mapToResponse(AuditLog log) {
     return AuditLogResponse.builder()
         .id(log.getId())
         .userId(log.getUserId())

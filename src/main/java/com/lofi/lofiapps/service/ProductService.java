@@ -1,9 +1,9 @@
 package com.lofi.lofiapps.service;
 
-import com.lofi.lofiapps.model.dto.request.CreateProductRequest;
-import com.lofi.lofiapps.model.dto.response.PagedResponse;
-import com.lofi.lofiapps.model.dto.response.ProductRecommendationResponse;
-import com.lofi.lofiapps.model.dto.response.ProductResponse;
+import com.lofi.lofiapps.dto.request.CreateProductRequest;
+import com.lofi.lofiapps.dto.response.PagedResponse;
+import com.lofi.lofiapps.dto.response.ProductRecommendationResponse;
+import com.lofi.lofiapps.dto.response.ProductResponse;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 

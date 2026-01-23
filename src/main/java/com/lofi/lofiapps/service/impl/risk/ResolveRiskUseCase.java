@@ -1,7 +1,7 @@
 package com.lofi.lofiapps.service.impl.risk;
 
-import com.lofi.lofiapps.model.dto.request.ResolveRiskRequest;
-import com.lofi.lofiapps.model.dto.response.RiskItem;
+import com.lofi.lofiapps.dto.request.ResolveRiskRequest;
+import com.lofi.lofiapps.dto.response.RiskItem;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

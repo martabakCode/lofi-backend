@@ -1,10 +1,10 @@
 package com.lofi.lofiapps.service.impl.document;
 
+import com.lofi.lofiapps.dto.request.PresignUploadRequest;
+import com.lofi.lofiapps.dto.response.PresignUploadResponse;
+import com.lofi.lofiapps.entity.Document;
 import com.lofi.lofiapps.exception.ResourceNotFoundException;
-import com.lofi.lofiapps.model.dto.request.PresignUploadRequest;
-import com.lofi.lofiapps.model.dto.response.PresignUploadResponse;
-import com.lofi.lofiapps.model.entity.JpaDocument;
-import com.lofi.lofiapps.repository.JpaDocumentRepository;
+import com.lofi.lofiapps.repository.DocumentRepository;
 import com.lofi.lofiapps.repository.LoanRepository;
 import com.lofi.lofiapps.service.StorageService;
 import java.net.URL;
@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class PresignUploadUseCase {
-  private final JpaDocumentRepository documentRepository;
+  private final DocumentRepository documentRepository;
   private final LoanRepository loanRepository;
   private final StorageService storageService;
 
@@ -36,7 +36,7 @@ public class PresignUploadUseCase {
 
     // 2. Create object key
     String objectKey;
-    if (request.getDocumentType() == com.lofi.lofiapps.model.enums.DocumentType.PROFILE_PICTURE) {
+    if (request.getDocumentType() == com.lofi.lofiapps.enums.DocumentType.PROFILE_PICTURE) {
       objectKey =
           String.format(
               "profiles/%s/%s_%s",
@@ -53,8 +53,8 @@ public class PresignUploadUseCase {
 
     // 3. Save document record (initially could be status PENDING, but for
     // simplicity we save it)
-    JpaDocument document =
-        JpaDocument.builder()
+    Document document =
+        Document.builder()
             .loanId(request.getLoanId())
             .fileName(request.getFileName())
             .objectKey(objectKey)
@@ -62,7 +62,7 @@ public class PresignUploadUseCase {
             .uploadedBy(userId)
             .build();
 
-    JpaDocument saved = documentRepository.save(document);
+    Document saved = documentRepository.save(document);
 
     // 4. Generate presigned URL (valid for 15 minutes)
     URL uploadUrl =

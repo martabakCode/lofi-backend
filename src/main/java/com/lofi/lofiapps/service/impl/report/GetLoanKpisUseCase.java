@@ -1,8 +1,8 @@
 package com.lofi.lofiapps.service.impl.report;
 
-import com.lofi.lofiapps.model.dto.response.LoanKpiResponse;
-import com.lofi.lofiapps.model.entity.Loan;
-import com.lofi.lofiapps.model.enums.LoanStatus;
+import com.lofi.lofiapps.dto.response.LoanKpiResponse;
+import com.lofi.lofiapps.entity.Loan;
+import com.lofi.lofiapps.enums.LoanStatus;
 import com.lofi.lofiapps.repository.LoanRepository;
 import java.util.List;
 import java.util.Map;
@@ -25,13 +25,13 @@ public class GetLoanKpisUseCase {
 
     return LoanKpiResponse.builder()
         .totalLoans(allLoans.size())
-        .totalSubmitted(loanRepository.countByStatus(LoanStatus.SUBMITTED))
-        .totalReviewed(loanRepository.countByStatus(LoanStatus.REVIEWED))
-        .totalApproved(loanRepository.countByStatus(LoanStatus.APPROVED))
-        .totalRejected(loanRepository.countByStatus(LoanStatus.REJECTED))
-        .totalCancelled(loanRepository.countByStatus(LoanStatus.CANCELLED))
-        .totalDisbursed(loanRepository.countByStatus(LoanStatus.DISBURSED))
-        .totalCompleted(loanRepository.countByStatus(LoanStatus.COMPLETED))
+        .totalSubmitted(loanRepository.countByLoanStatus(LoanStatus.SUBMITTED))
+        .totalReviewed(loanRepository.countByLoanStatus(LoanStatus.REVIEWED))
+        .totalApproved(loanRepository.countByLoanStatus(LoanStatus.APPROVED))
+        .totalRejected(loanRepository.countByLoanStatus(LoanStatus.REJECTED))
+        .totalCancelled(loanRepository.countByLoanStatus(LoanStatus.CANCELLED))
+        .totalDisbursed(loanRepository.countByLoanStatus(LoanStatus.DISBURSED))
+        .totalCompleted(loanRepository.countByLoanStatus(LoanStatus.COMPLETED))
         .loansByProduct(loansByProduct)
         .build();
   }

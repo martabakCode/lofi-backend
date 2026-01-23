@@ -1,6 +1,6 @@
 package com.lofi.lofiapps.security.idempotency;
 
-import com.lofi.lofiapps.model.dto.response.ApiResponse;
+import com.lofi.lofiapps.dto.response.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.MethodParameter;

@@ -1,14 +1,14 @@
 package com.lofi.lofiapps.repository;
 
-import com.lofi.lofiapps.model.dto.request.LoanCriteria;
-import com.lofi.lofiapps.model.entity.JpaLoan;
+import com.lofi.lofiapps.dto.request.LoanCriteria;
+import com.lofi.lofiapps.entity.Loan;
 import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.data.jpa.domain.Specification;
 
 public class LoanSpecification {
-  public static Specification<JpaLoan> withCriteria(LoanCriteria criteria) {
+  public static Specification<Loan> withCriteria(LoanCriteria criteria) {
     return (root, query, criteriaBuilder) -> {
       List<Predicate> predicates = new ArrayList<>();
 

@@ -1,11 +1,11 @@
 package com.lofi.lofiapps.config;
 
-import com.lofi.lofiapps.model.entity.*;
-import com.lofi.lofiapps.model.enums.ApprovalStage;
-import com.lofi.lofiapps.model.enums.DocumentType;
-import com.lofi.lofiapps.model.enums.LoanStatus;
-import com.lofi.lofiapps.model.enums.RoleName;
-import com.lofi.lofiapps.model.enums.UserStatus;
+import com.lofi.lofiapps.entity.*;
+import com.lofi.lofiapps.enums.ApprovalStage;
+import com.lofi.lofiapps.enums.DocumentType;
+import com.lofi.lofiapps.enums.LoanStatus;
+import com.lofi.lofiapps.enums.RoleName;
+import com.lofi.lofiapps.enums.UserStatus;
 import com.lofi.lofiapps.repository.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -24,16 +24,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class DevelopmentDataSeeder {
 
-  private final JpaRoleRepository roleRepository;
-  private final JpaPermissionRepository permissionRepository;
-  private final JpaUserRepository userRepository;
-  private final JpaBranchRepository branchRepository;
-  private final JpaProductRepository productRepository;
-  private final JpaLoanRepository loanRepository;
-  private final JpaApprovalHistoryRepository approvalHistoryRepository;
-  private final JpaNotificationRepository notificationRepository;
-  private final JpaDocumentRepository documentRepository;
-  private final JpaAuditLogRepository auditLogRepository;
+  private final RoleRepository roleRepository;
+  private final PermissionRepository permissionRepository;
+  private final UserRepository userRepository;
+  private final BranchRepository branchRepository;
+  private final ProductRepository productRepository;
+  private final LoanRepository loanRepository;
+  private final ApprovalHistoryRepository approvalHistoryRepository;
+  private final NotificationRepository notificationRepository;
+  private final DocumentRepository documentRepository;
+  private final AuditLogRepository auditLogRepository;
   private final PasswordEncoder passwordEncoder;
 
   @Bean
@@ -48,7 +48,7 @@ public class DevelopmentDataSeeder {
       initRolesAndPermissions();
 
       // 2. Branch (Prerequisite for Users)
-      JpaBranch branch = initBranch();
+      Branch branch = initBranch();
 
       // 3. Admin & Users
       initUsers(branch);
@@ -74,15 +74,15 @@ public class DevelopmentDataSeeder {
       "LOAN_DISBURSE", "LOAN_ROLLBACK", "VIEW_DASHBOARD", "EXPORT_REPORT"
     };
 
-    Set<JpaPermission> allPermissions = new HashSet<>();
+    Set<Permission> allPermissions = new HashSet<>();
     for (String permName : permissions) {
-      JpaPermission permission =
+      Permission permission =
           permissionRepository
               .findByName(permName)
               .orElseGet(
                   () -> {
-                    JpaPermission newPerm =
-                        JpaPermission.builder()
+                    Permission newPerm =
+                        Permission.builder()
                             .name(permName)
                             .description("Permission " + permName)
                             .build();
@@ -98,38 +98,36 @@ public class DevelopmentDataSeeder {
     createRole(RoleName.ROLE_ADMIN, allPermissions); // Keep legacy admin populated too
 
     // CUSTOMER: Create, Submit
-    Set<JpaPermission> custPerms = filterPermissions(allPermissions, "LOAN_CREATE", "LOAN_SUBMIT");
+    Set<Permission> custPerms = filterPermissions(allPermissions, "LOAN_CREATE", "LOAN_SUBMIT");
     createRole(RoleName.ROLE_CUSTOMER, custPerms);
 
     // MARKETING: Review, View Dashboard
-    Set<JpaPermission> mktPerms =
-        filterPermissions(allPermissions, "LOAN_REVIEW", "VIEW_DASHBOARD");
+    Set<Permission> mktPerms = filterPermissions(allPermissions, "LOAN_REVIEW", "VIEW_DASHBOARD");
     createRole(RoleName.ROLE_MARKETING, mktPerms);
 
     // BRANCH_MANAGER: Approve, Rollback, View Dashboard, Export
-    Set<JpaPermission> bmPerms =
+    Set<Permission> bmPerms =
         filterPermissions(
             allPermissions, "LOAN_APPROVE", "LOAN_ROLLBACK", "VIEW_DASHBOARD", "EXPORT_REPORT");
     createRole(RoleName.ROLE_BRANCH_MANAGER, bmPerms);
 
     // BACK_OFFICE: Disburse, View Dashboard
-    Set<JpaPermission> boPerms =
-        filterPermissions(allPermissions, "LOAN_DISBURSE", "VIEW_DASHBOARD");
+    Set<Permission> boPerms = filterPermissions(allPermissions, "LOAN_DISBURSE", "VIEW_DASHBOARD");
     createRole(RoleName.ROLE_BACK_OFFICE, boPerms);
   }
 
-  private Set<JpaPermission> filterPermissions(Set<JpaPermission> all, String... names) {
+  private Set<Permission> filterPermissions(Set<Permission> all, String... names) {
     Set<String> target = Set.of(names);
     return all.stream().filter(p -> target.contains(p.getName())).collect(Collectors.toSet());
   }
 
-  private void createRole(RoleName roleName, Set<JpaPermission> permissions) {
+  private void createRole(RoleName roleName, Set<Permission> permissions) {
     if (roleRepository.findByName(roleName).isEmpty()) {
-      roleRepository.save(JpaRole.builder().name(roleName).permissions(permissions).build());
+      roleRepository.save(Role.builder().name(roleName).permissions(permissions).build());
       log.info("Created Role: {}", roleName);
     } else {
       // Update permissions if exists (optional, but good for idemp)
-      JpaRole role = roleRepository.findByName(roleName).get();
+      Role role = roleRepository.findByName(roleName).get();
       if (role.getPermissions() == null || role.getPermissions().isEmpty()) {
         role.setPermissions(permissions);
         roleRepository.save(role);
@@ -137,10 +135,10 @@ public class DevelopmentDataSeeder {
     }
   }
 
-  private JpaBranch initBranch() {
+  private Branch initBranch() {
     if (branchRepository.count() == 0) {
-      JpaBranch branch =
-          JpaBranch.builder()
+      Branch branch =
+          Branch.builder()
               .name("Main Branch")
               .address("123 Seeder St")
               .city("Jakarta")
@@ -153,7 +151,7 @@ public class DevelopmentDataSeeder {
     return branchRepository.findAll().get(0);
   }
 
-  private void initUsers(JpaBranch branch) {
+  private void initUsers(Branch branch) {
     String password = passwordEncoder.encode("Password123!");
 
     // Super Admin
@@ -214,12 +212,12 @@ public class DevelopmentDataSeeder {
       String username,
       String fullName,
       RoleName roleName,
-      JpaBranch branch,
+      Branch branch,
       String password) {
     if (!userRepository.existsByEmail(email) && !userRepository.existsByUsername(username)) {
-      JpaRole role = roleRepository.findByName(roleName).orElseThrow();
-      JpaUser user =
-          JpaUser.builder()
+      Role role = roleRepository.findByName(roleName).orElseThrow();
+      User user =
+          User.builder()
               .username(username)
               .email(email)
               .password(password)
@@ -287,8 +285,8 @@ public class DevelopmentDataSeeder {
       BigDecimal minAmount,
       BigDecimal maxAmount) {
 
-    Optional<JpaProduct> existing = productRepository.findByProductCode(code);
-    JpaProduct product;
+    Optional<Product> existing = productRepository.findByProductCode(code);
+    Product product;
 
     if (existing.isPresent()) {
       product = existing.get();
@@ -304,7 +302,7 @@ public class DevelopmentDataSeeder {
       log.info("Updated Product: {}", name);
     } else {
       product =
-          JpaProduct.builder()
+          Product.builder()
               .productCode(code)
               .productName(name)
               .description(desc)
@@ -325,15 +323,15 @@ public class DevelopmentDataSeeder {
     // if (loanRepository.count() > 0) return; // Removed to force re-seed after
     // cleanup
 
-    JpaProduct prod1 = productRepository.findByProductCode("BASIC").orElseThrow();
-    JpaProduct prod2 = productRepository.findByProductCode("STANDARD").orElseThrow();
+    Product prod1 = productRepository.findByProductCode("BASIC").orElseThrow();
+    Product prod2 = productRepository.findByProductCode("STANDARD").orElseThrow();
 
-    JpaUser cust1 = findUser("customer1@lofi.test");
-    JpaUser cust2 = findUser("customer2@lofi.test");
-    JpaUser cust3 = findUser("customer3@lofi.test");
-    JpaUser cust4 = findUser("customer4@lofi.test");
-    JpaUser cust5 = findUser("customer5@lofi.test");
-    JpaUser cust6 = findUser("customer6@lofi.test");
+    User cust1 = findUser("customer1@lofi.test");
+    User cust2 = findUser("customer2@lofi.test");
+    User cust3 = findUser("customer3@lofi.test");
+    User cust4 = findUser("customer4@lofi.test");
+    User cust5 = findUser("customer5@lofi.test");
+    User cust6 = findUser("customer6@lofi.test");
 
     // TC01-TC05: Draft
     createLoan(cust1, prod1, LoanStatus.DRAFT, ApprovalStage.CUSTOMER, 0, null);
@@ -380,15 +378,15 @@ public class DevelopmentDataSeeder {
     // But initLoans checks count > 0.
     // Let's rely on checking for a specific reference.
 
-    JpaUser cust = findUser("customer1@lofi.test");
+    User cust = findUser("customer1@lofi.test");
     boolean slaExists =
         loanRepository.findByCustomerId(cust.getId()).stream()
             .anyMatch(l -> "SLA-TEST-REF".equals(l.getDisbursementReference()));
 
     if (slaExists) return;
 
-    JpaBranch branch = branchRepository.findAll().get(0);
-    JpaProduct prod = productRepository.findByProductCode("PREMIUM").orElseThrow();
+    Branch branch = branchRepository.findAll().get(0);
+    Product prod = productRepository.findByProductCode("PREMIUM").orElseThrow();
 
     // SLA Scenario: Marketing PASS, BM FAIL, BO PASS
     LocalDateTime now = LocalDateTime.now();
@@ -397,8 +395,8 @@ public class DevelopmentDataSeeder {
     LocalDateTime approveTime = now.minusHours(30); // 60h delta (FAIL)
     LocalDateTime disburseTime = now.minusHours(20); // 10h delta (PASS)
 
-    JpaLoan loan =
-        JpaLoan.builder()
+    Loan loan =
+        Loan.builder()
             .customer(cust)
             .product(prod)
             .loanAmount(new BigDecimal("99000000"))
@@ -416,7 +414,7 @@ public class DevelopmentDataSeeder {
 
     // History
     approvalHistoryRepository.save(
-        JpaApprovalHistory.builder()
+        ApprovalHistory.builder()
             .loanId(loan.getId())
             .fromStatus(LoanStatus.DRAFT)
             .toStatus(LoanStatus.SUBMITTED)
@@ -424,7 +422,7 @@ public class DevelopmentDataSeeder {
             .createdAt(submitTime)
             .build());
     approvalHistoryRepository.save(
-        JpaApprovalHistory.builder()
+        ApprovalHistory.builder()
             .loanId(loan.getId())
             .fromStatus(LoanStatus.SUBMITTED)
             .toStatus(LoanStatus.REVIEWED)
@@ -432,7 +430,7 @@ public class DevelopmentDataSeeder {
             .createdAt(reviewTime)
             .build());
     approvalHistoryRepository.save(
-        JpaApprovalHistory.builder()
+        ApprovalHistory.builder()
             .loanId(loan.getId())
             .fromStatus(LoanStatus.REVIEWED)
             .toStatus(LoanStatus.APPROVED)
@@ -440,7 +438,7 @@ public class DevelopmentDataSeeder {
             .createdAt(approveTime)
             .build());
     approvalHistoryRepository.save(
-        JpaApprovalHistory.builder()
+        ApprovalHistory.builder()
             .loanId(loan.getId())
             .fromStatus(LoanStatus.APPROVED)
             .toStatus(LoanStatus.DISBURSED)
@@ -450,14 +448,14 @@ public class DevelopmentDataSeeder {
   }
 
   private void createLoan(
-      JpaUser customer,
-      JpaProduct product,
+      User customer,
+      Product product,
       LoanStatus status,
       ApprovalStage stage,
       int dayOffset,
       String action) {
-    JpaLoan loan =
-        JpaLoan.builder()
+    Loan loan =
+        Loan.builder()
             .customer(customer)
             .product(product)
             .loanAmount(product.getMinLoanAmount().add(new BigDecimal("1000000")))
@@ -496,10 +494,10 @@ public class DevelopmentDataSeeder {
     }
   }
 
-  private void createRollbackScenario(JpaUser user) {
-    JpaProduct prod = productRepository.findByProductCode("BASIC").orElseThrow();
-    JpaLoan loan =
-        JpaLoan.builder()
+  private void createRollbackScenario(User user) {
+    Product prod = productRepository.findByProductCode("BASIC").orElseThrow();
+    Loan loan =
+        Loan.builder()
             .customer(user)
             .product(prod)
             .loanAmount(new BigDecimal("15000000"))
@@ -512,21 +510,21 @@ public class DevelopmentDataSeeder {
     loan = loanRepository.save(loan);
 
     approvalHistoryRepository.save(
-        JpaApprovalHistory.builder()
+        ApprovalHistory.builder()
             .loanId(loan.getId())
             .fromStatus(LoanStatus.DRAFT)
             .toStatus(LoanStatus.SUBMITTED)
             .actionBy(user.getUsername())
             .build());
     approvalHistoryRepository.save(
-        JpaApprovalHistory.builder()
+        ApprovalHistory.builder()
             .loanId(loan.getId())
             .fromStatus(LoanStatus.SUBMITTED)
             .toStatus(LoanStatus.REVIEWED)
             .actionBy("marketing1")
             .build());
     approvalHistoryRepository.save(
-        JpaApprovalHistory.builder()
+        ApprovalHistory.builder()
             .loanId(loan.getId())
             .fromStatus(LoanStatus.REVIEWED)
             .toStatus(LoanStatus.SUBMITTED)
@@ -535,10 +533,10 @@ public class DevelopmentDataSeeder {
             .build());
   }
 
-  private void createDoubleSubmissionScenario(JpaUser user) {
-    JpaProduct prod = productRepository.findByProductCode("BASIC").orElseThrow();
-    JpaLoan loan1 =
-        JpaLoan.builder()
+  private void createDoubleSubmissionScenario(User user) {
+    Product prod = productRepository.findByProductCode("BASIC").orElseThrow();
+    Loan loan1 =
+        Loan.builder()
             .customer(user)
             .product(prod)
             .loanAmount(new BigDecimal("10000000"))
@@ -551,8 +549,8 @@ public class DevelopmentDataSeeder {
             .build();
     loanRepository.save(loan1);
 
-    JpaLoan loan2 =
-        JpaLoan.builder()
+    Loan loan2 =
+        Loan.builder()
             .customer(user)
             .product(prod)
             .loanAmount(new BigDecimal("20000000"))
@@ -565,7 +563,7 @@ public class DevelopmentDataSeeder {
     loanRepository.save(loan2);
 
     approvalHistoryRepository.save(
-        JpaApprovalHistory.builder()
+        ApprovalHistory.builder()
             .loanId(loan2.getId())
             .fromStatus(LoanStatus.SUBMITTED)
             .toStatus(LoanStatus.CANCELLED)
@@ -574,9 +572,9 @@ public class DevelopmentDataSeeder {
             .build());
   }
 
-  private void createHistory(JpaLoan loan, String action) {
-    JpaApprovalHistory history =
-        JpaApprovalHistory.builder()
+  private void createHistory(Loan loan, String action) {
+    ApprovalHistory history =
+        ApprovalHistory.builder()
             .loanId(loan.getId())
             .fromStatus(LoanStatus.DRAFT)
             .toStatus(loan.getLoanStatus())
@@ -586,9 +584,9 @@ public class DevelopmentDataSeeder {
     approvalHistoryRepository.save(history);
   }
 
-  private void createNotification(JpaLoan loan, String action) {
-    JpaNotification notif =
-        JpaNotification.builder()
+  private void createNotification(Loan loan, String action) {
+    Notification notif =
+        Notification.builder()
             .userId(loan.getCustomer().getId())
             .title("Loan Update: " + loan.getLoanStatus())
             .message("Your loan has been updated via " + action)
@@ -598,9 +596,9 @@ public class DevelopmentDataSeeder {
     notificationRepository.save(notif);
   }
 
-  private void createAudit(JpaLoan loan, String action) {
-    JpaAuditLog log =
-        JpaAuditLog.builder()
+  private void createAudit(Loan loan, String action) {
+    AuditLog log =
+        AuditLog.builder()
             .action("SEED_" + action.toUpperCase())
             .resourceType("Loan")
             .resourceId(loan.getId().toString())
@@ -610,21 +608,21 @@ public class DevelopmentDataSeeder {
     auditLogRepository.save(log);
   }
 
-  private JpaUser findUser(String email) {
+  private User findUser(String email) {
     return userRepository.findByEmail(email).orElseThrow();
   }
 
-  private void createDocuments(JpaLoan loan) {
+  private void createDocuments(Loan loan) {
     createDocument(loan, DocumentType.KTP, "ktp_dummy.jpg");
     createDocument(loan, DocumentType.NPWP, "npwp_dummy.jpg");
     createDocument(loan, DocumentType.KK, "kk_dummy.jpg");
   }
 
-  private void createDocument(JpaLoan loan, DocumentType type, String filename) {
+  private void createDocument(Loan loan, DocumentType type, String filename) {
     if (documentRepository.findByLoanId(loan.getId()).stream()
         .noneMatch(d -> d.getDocumentType() == type)) {
-      JpaDocument doc =
-          JpaDocument.builder()
+      Document doc =
+          Document.builder()
               .loanId(loan.getId())
               .documentType(type)
               .fileName(filename)
@@ -646,7 +644,7 @@ public class DevelopmentDataSeeder {
   }
 
   private void initPendingSlaLoans() {
-    JpaBranch branch = branchRepository.findAll().get(0);
+    Branch branch = branchRepository.findAll().get(0);
     createUser(
         "customer7@lofi.test",
         "customer7",
@@ -655,19 +653,19 @@ public class DevelopmentDataSeeder {
         branch,
         passwordEncoder.encode("Password123!"));
 
-    JpaUser cust = findUser("customer7@lofi.test");
-    JpaProduct prod = productRepository.findByProductCode("BASIC").orElseThrow();
+    User cust = findUser("customer7@lofi.test");
+    Product prod = productRepository.findByProductCode("BASIC").orElseThrow();
 
     // 1. Breached REVIEW (SUBMITTED 2 days ago)
     createLoan(
         cust, prod, LoanStatus.SUBMITTED, ApprovalStage.MARKETING, 0, "SLA_BREACH_SUBMITTED");
-    JpaLoan l1 =
+    Loan l1 =
         loanRepository.findAll().stream()
             .filter(
                 l ->
                     l.getCustomer().getId().equals(cust.getId())
                         && l.getCurrentStage() == ApprovalStage.MARKETING)
-            .max(Comparator.comparing(JpaLoan::getCreatedAt))
+            .max(Comparator.comparing(Loan::getCreatedAt))
             .orElseThrow();
 
     // Backdate Loan
@@ -692,7 +690,7 @@ public class DevelopmentDataSeeder {
     // 3. Breached APPROVAL (REVIEWED 3 days ago)
     createLoan(
         cust, prod, LoanStatus.REVIEWED, ApprovalStage.BRANCH_MANAGER, 0, "SLA_BREACH_REVIEWED");
-    JpaLoan l3 =
+    Loan l3 =
         loanRepository.findAll().stream()
             .filter(
                 l ->

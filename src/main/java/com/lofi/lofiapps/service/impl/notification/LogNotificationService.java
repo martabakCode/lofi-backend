@@ -1,9 +1,9 @@
 package com.lofi.lofiapps.service.impl.notification;
 
-import com.lofi.lofiapps.model.dto.response.EmailDraftResponse;
-import com.lofi.lofiapps.model.dto.response.NotificationGenerationResponse;
-import com.lofi.lofiapps.model.entity.Notification;
-import com.lofi.lofiapps.model.enums.LoanStatus;
+import com.lofi.lofiapps.dto.response.EmailDraftResponse;
+import com.lofi.lofiapps.dto.response.NotificationGenerationResponse;
+import com.lofi.lofiapps.entity.Notification;
+import com.lofi.lofiapps.enums.LoanStatus;
 import com.lofi.lofiapps.repository.NotificationRepository;
 import com.lofi.lofiapps.service.NotificationService;
 import java.util.UUID;

@@ -1,8 +1,8 @@
 package com.lofi.lofiapps.mapper;
 
-import com.lofi.lofiapps.model.dto.request.CreateProductRequest;
-import com.lofi.lofiapps.model.dto.response.ProductResponse;
-import com.lofi.lofiapps.model.entity.Product;
+import com.lofi.lofiapps.dto.request.CreateProductRequest;
+import com.lofi.lofiapps.dto.response.ProductResponse;
+import com.lofi.lofiapps.entity.Product;
 import org.springframework.stereotype.Component;
 
 @Component

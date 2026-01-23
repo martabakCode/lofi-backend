@@ -1,7 +1,7 @@
 package com.lofi.lofiapps.service.impl.auth;
 
-import com.lofi.lofiapps.model.dto.request.ChangePasswordRequest;
-import com.lofi.lofiapps.model.entity.User;
+import com.lofi.lofiapps.dto.request.ChangePasswordRequest;
+import com.lofi.lofiapps.entity.User;
 import com.lofi.lofiapps.repository.UserRepository;
 import com.lofi.lofiapps.security.service.UserPrincipal;
 import java.util.UUID;

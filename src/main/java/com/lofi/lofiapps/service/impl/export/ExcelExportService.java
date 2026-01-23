@@ -1,7 +1,7 @@
 package com.lofi.lofiapps.service.impl.export;
 
-import com.lofi.lofiapps.model.dto.response.LoanKpiResponse;
-import com.lofi.lofiapps.model.dto.response.SlaReportResponse;
+import com.lofi.lofiapps.dto.response.LoanKpiResponse;
+import com.lofi.lofiapps.dto.response.SlaReportResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;

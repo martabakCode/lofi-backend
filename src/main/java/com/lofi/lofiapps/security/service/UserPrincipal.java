@@ -1,7 +1,7 @@
 package com.lofi.lofiapps.security.service;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.lofi.lofiapps.model.entity.User;
+import com.lofi.lofiapps.entity.User;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;

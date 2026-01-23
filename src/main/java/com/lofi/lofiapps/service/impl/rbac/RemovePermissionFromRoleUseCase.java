@@ -1,10 +1,10 @@
 package com.lofi.lofiapps.service.impl.rbac;
 
+import com.lofi.lofiapps.entity.Permission;
+import com.lofi.lofiapps.entity.Role;
 import com.lofi.lofiapps.exception.ResourceNotFoundException;
-import com.lofi.lofiapps.model.entity.JpaPermission;
-import com.lofi.lofiapps.model.entity.JpaRole;
-import com.lofi.lofiapps.repository.JpaPermissionRepository;
-import com.lofi.lofiapps.repository.JpaRoleRepository;
+import com.lofi.lofiapps.repository.PermissionRepository;
+import com.lofi.lofiapps.repository.RoleRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,17 +13,17 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class RemovePermissionFromRoleUseCase {
-  private final JpaRoleRepository roleRepository;
-  private final JpaPermissionRepository permissionRepository;
+  private final RoleRepository roleRepository;
+  private final PermissionRepository permissionRepository;
 
   @Transactional
   public void execute(UUID roleId, UUID permissionId) {
-    JpaRole role =
+    Role role =
         roleRepository
             .findById(roleId)
             .orElseThrow(() -> new ResourceNotFoundException("Role", "id", roleId.toString()));
 
-    JpaPermission permission =
+    Permission permission =
         permissionRepository
             .findById(permissionId)
             .orElseThrow(

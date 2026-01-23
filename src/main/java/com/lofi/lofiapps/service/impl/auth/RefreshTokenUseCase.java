@@ -1,8 +1,8 @@
 package com.lofi.lofiapps.service.impl.auth;
 
-import com.lofi.lofiapps.model.dto.response.LoginResponse;
-import com.lofi.lofiapps.model.entity.RefreshToken;
-import com.lofi.lofiapps.model.entity.User;
+import com.lofi.lofiapps.dto.response.LoginResponse;
+import com.lofi.lofiapps.entity.RefreshToken;
+import com.lofi.lofiapps.entity.User;
 import com.lofi.lofiapps.repository.RefreshTokenRepository;
 import com.lofi.lofiapps.repository.UserRepository;
 import com.lofi.lofiapps.security.jwt.JwtUtils;

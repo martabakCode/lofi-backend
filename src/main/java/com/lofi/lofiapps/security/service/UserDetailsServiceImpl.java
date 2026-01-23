@@ -1,6 +1,6 @@
 package com.lofi.lofiapps.security.service;
 
-import com.lofi.lofiapps.model.entity.User;
+import com.lofi.lofiapps.entity.User;
 import com.lofi.lofiapps.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;

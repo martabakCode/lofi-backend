@@ -1,16 +1,9 @@
 package com.lofi.lofiapps.repository;
 
-import com.lofi.lofiapps.model.entity.Branch;
-import java.util.List;
-import java.util.Optional;
+import com.lofi.lofiapps.entity.Branch;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface BranchRepository {
-  Optional<Branch> findById(UUID id);
-
-  List<Branch> findAll();
-
-  Branch save(Branch branch);
-
-  void deleteById(UUID id);
-}
+@Repository
+public interface BranchRepository extends JpaRepository<Branch, UUID> {}

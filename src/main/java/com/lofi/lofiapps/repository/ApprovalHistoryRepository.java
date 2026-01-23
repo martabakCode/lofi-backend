@@ -1,11 +1,12 @@
 package com.lofi.lofiapps.repository;
 
-import com.lofi.lofiapps.model.entity.ApprovalHistory;
+import com.lofi.lofiapps.entity.ApprovalHistory;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface ApprovalHistoryRepository {
-  ApprovalHistory save(ApprovalHistory approvalHistory);
-
+@Repository
+public interface ApprovalHistoryRepository extends JpaRepository<ApprovalHistory, UUID> {
   List<ApprovalHistory> findByLoanId(UUID loanId);
 }

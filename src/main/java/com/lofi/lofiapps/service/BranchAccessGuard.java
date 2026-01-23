@@ -1,8 +1,8 @@
 package com.lofi.lofiapps.service;
 
-import com.lofi.lofiapps.model.entity.Loan;
-import com.lofi.lofiapps.model.entity.User;
-import com.lofi.lofiapps.model.enums.RoleName;
+import com.lofi.lofiapps.entity.Loan;
+import com.lofi.lofiapps.entity.User;
+import com.lofi.lofiapps.enums.RoleName;
 import org.springframework.stereotype.Service;
 
 @Service

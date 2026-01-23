@@ -1,7 +1,7 @@
 package com.lofi.lofiapps.mapper;
 
-import com.lofi.lofiapps.model.dto.response.LoanResponse;
-import com.lofi.lofiapps.model.entity.Loan;
+import com.lofi.lofiapps.dto.response.LoanResponse;
+import com.lofi.lofiapps.entity.Loan;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

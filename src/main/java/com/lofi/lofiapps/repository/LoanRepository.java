@@ -1,26 +1,18 @@
 package com.lofi.lofiapps.repository;
 
-import com.lofi.lofiapps.model.dto.request.LoanCriteria;
-import com.lofi.lofiapps.model.entity.Loan;
-import com.lofi.lofiapps.model.enums.LoanStatus;
+import com.lofi.lofiapps.entity.Loan;
+import com.lofi.lofiapps.enums.LoanStatus;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.stereotype.Repository;
 
-public interface LoanRepository {
-  Loan save(Loan loan);
-
-  Optional<Loan> findById(UUID id);
-
+@Repository
+public interface LoanRepository extends JpaRepository<Loan, UUID>, JpaSpecificationExecutor<Loan> {
   List<Loan> findByCustomerId(UUID customerId);
 
-  List<Loan> findByStatus(LoanStatus status);
+  List<Loan> findByLoanStatus(LoanStatus loanStatus);
 
-  Page<Loan> findAll(LoanCriteria criteria, Pageable pageable);
-
-  long countByStatus(LoanStatus status);
-
-  List<Loan> findAll();
+  long countByLoanStatus(LoanStatus loanStatus);
 }

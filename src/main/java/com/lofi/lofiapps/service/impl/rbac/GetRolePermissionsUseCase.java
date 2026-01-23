@@ -1,9 +1,9 @@
 package com.lofi.lofiapps.service.impl.rbac;
 
+import com.lofi.lofiapps.dto.response.PermissionResponse;
+import com.lofi.lofiapps.entity.Role;
 import com.lofi.lofiapps.exception.ResourceNotFoundException;
-import com.lofi.lofiapps.model.dto.response.PermissionResponse;
-import com.lofi.lofiapps.model.entity.JpaRole;
-import com.lofi.lofiapps.repository.JpaRoleRepository;
+import com.lofi.lofiapps.repository.RoleRepository;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -13,10 +13,10 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class GetRolePermissionsUseCase {
-  private final JpaRoleRepository roleRepository;
+  private final RoleRepository roleRepository;
 
   public List<PermissionResponse> execute(UUID roleId) {
-    JpaRole role =
+    Role role =
         roleRepository
             .findById(roleId)
             .orElseThrow(() -> new ResourceNotFoundException("Role", "id", roleId.toString()));

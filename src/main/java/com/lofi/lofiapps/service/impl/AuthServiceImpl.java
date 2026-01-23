@@ -1,0 +1,64 @@
+package com.lofi.lofiapps.service.impl;
+
+import com.lofi.lofiapps.dto.request.*;
+import com.lofi.lofiapps.dto.response.*;
+import com.lofi.lofiapps.service.AuthService;
+import com.lofi.lofiapps.service.impl.auth.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class AuthServiceImpl implements AuthService {
+
+  private final LoginUseCase loginUseCase;
+  private final LogoutUseCase logoutUseCase;
+  private final GoogleLoginUseCase googleLoginUseCase;
+  private final ForgotPasswordUseCase forgotPasswordUseCase;
+  private final ResetPasswordUseCase resetPasswordUseCase;
+  private final ChangePasswordUseCase changePasswordUseCase;
+  private final RefreshTokenUseCase refreshTokenUseCase;
+
+  @Override
+  @Transactional
+  public LoginResponse login(LoginRequest request) {
+    return loginUseCase.execute(request);
+  }
+
+  @Override
+  @Transactional
+  public LoginResponse googleLogin(GoogleLoginRequest request) {
+    return googleLoginUseCase.execute(request);
+  }
+
+  @Override
+  @Transactional
+  public LoginResponse refresh(String refreshToken) {
+    return refreshTokenUseCase.execute(refreshToken);
+  }
+
+  @Override
+  @Transactional
+  public void logout(String token) {
+    logoutUseCase.execute(token);
+  }
+
+  @Override
+  @Transactional
+  public void forgotPassword(ForgotPasswordRequest request) {
+    forgotPasswordUseCase.execute(request);
+  }
+
+  @Override
+  @Transactional
+  public void resetPassword(ResetPasswordRequest request) {
+    resetPasswordUseCase.execute(request);
+  }
+
+  @Override
+  @Transactional
+  public void changePassword(ChangePasswordRequest request) {
+    changePasswordUseCase.execute(request);
+  }
+}

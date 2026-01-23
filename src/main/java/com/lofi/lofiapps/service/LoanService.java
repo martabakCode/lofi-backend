@@ -1,8 +1,8 @@
 package com.lofi.lofiapps.service;
 
-import com.lofi.lofiapps.model.dto.request.LoanCriteria;
-import com.lofi.lofiapps.model.dto.request.LoanRequest;
-import com.lofi.lofiapps.model.dto.response.*;
+import com.lofi.lofiapps.dto.request.LoanCriteria;
+import com.lofi.lofiapps.dto.request.LoanRequest;
+import com.lofi.lofiapps.dto.response.*;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 

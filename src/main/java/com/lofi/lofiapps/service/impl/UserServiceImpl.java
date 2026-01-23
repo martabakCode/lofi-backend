@@ -1,18 +1,23 @@
 package com.lofi.lofiapps.service.impl;
 
+import com.lofi.lofiapps.dto.request.CreateUserRequest;
+import com.lofi.lofiapps.dto.request.UpdateProfileRequest;
+import com.lofi.lofiapps.dto.request.UserCriteria;
+import com.lofi.lofiapps.dto.response.*;
+import com.lofi.lofiapps.dto.response.UserProfileResponse.BiodataInfo;
+import com.lofi.lofiapps.dto.response.UserProfileResponse.BranchInfo;
+import com.lofi.lofiapps.entity.*;
+import com.lofi.lofiapps.enums.*;
 import com.lofi.lofiapps.exception.ResourceNotFoundException;
-import com.lofi.lofiapps.model.dto.request.CreateUserRequest;
-import com.lofi.lofiapps.model.dto.request.UpdateProfileRequest;
-import com.lofi.lofiapps.model.dto.request.UserCriteria;
-import com.lofi.lofiapps.model.dto.response.*;
-import com.lofi.lofiapps.model.entity.*;
-import com.lofi.lofiapps.model.enums.*;
 import com.lofi.lofiapps.repository.*;
 import com.lofi.lofiapps.security.service.UserPrincipal;
 import com.lofi.lofiapps.service.LoanService;
 import com.lofi.lofiapps.service.StorageService;
 import com.lofi.lofiapps.service.UserService;
 import com.lofi.lofiapps.service.impl.user.AnalyzeEligibilityUseCase;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Predicate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -21,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -141,14 +147,14 @@ public class UserServiceImpl implements UserService {
         .profilePictureUrl(profilePictureUrl)
         .branch(
             user.getBranch() != null
-                ? UserProfileResponse.BranchInfo.builder()
+                ? BranchInfo.builder()
                     .id(user.getBranch().getId())
                     .name(user.getBranch().getName())
                     .build()
                 : null)
         .biodata(
             user.getUserBiodata() != null
-                ? UserProfileResponse.BiodataInfo.builder()
+                ? BiodataInfo.builder()
                     .incomeSource(user.getUserBiodata().getIncomeSource())
                     .incomeType(user.getUserBiodata().getIncomeType())
                     .monthlyIncome(user.getUserBiodata().getMonthlyIncome())
@@ -186,8 +192,23 @@ public class UserServiceImpl implements UserService {
     // I will fix interface to include criteria if I can. But I'll stick to this for
     // now to match interface I wrote.
 
-    Page<User> page =
-        userRepository.findAll(new UserCriteria(), pageable); // Assuming default constructor exists
+    UserCriteria criteria = new UserCriteria();
+    Specification<User> spec =
+        (root, query, cb) -> {
+          List<Predicate> predicates = new ArrayList<>();
+          if (criteria.getStatus() != null) {
+            predicates.add(cb.equal(root.get("status"), criteria.getStatus()));
+          }
+          if (criteria.getBranchId() != null) {
+            predicates.add(cb.equal(root.get("branch").get("id"), criteria.getBranchId()));
+          }
+          if (criteria.getRoleName() != null) {
+            Join<User, Role> roles = root.join("roles");
+            predicates.add(cb.equal(roles.get("name"), criteria.getRoleName()));
+          }
+          return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    Page<User> page = userRepository.findAll(spec, pageable);
     // or null
 
     List<UserSummaryResponse> items =
@@ -225,9 +246,9 @@ public class UserServiceImpl implements UserService {
     user.setProfilePictureUrl(request.getProfilePictureUrl());
 
     // Update Biodata
-    com.lofi.lofiapps.model.entity.UserBiodata biodata = user.getUserBiodata();
+    UserBiodata biodata = user.getUserBiodata();
     if (biodata == null) {
-      biodata = new com.lofi.lofiapps.model.entity.UserBiodata();
+      biodata = new UserBiodata();
       user.setUserBiodata(biodata);
     }
 

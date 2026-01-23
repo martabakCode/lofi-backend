@@ -1,6 +1,6 @@
 package com.lofi.lofiapps.service.impl.notification;
 
-import com.lofi.lofiapps.model.dto.response.EmailDraftResponse;
+import com.lofi.lofiapps.dto.response.EmailDraftResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

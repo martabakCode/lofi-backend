@@ -1,9 +1,9 @@
 package com.lofi.lofiapps.service.impl.document;
 
+import com.lofi.lofiapps.dto.response.DownloadDocumentResponse;
+import com.lofi.lofiapps.entity.Document;
 import com.lofi.lofiapps.exception.ResourceNotFoundException;
-import com.lofi.lofiapps.model.dto.response.DownloadDocumentResponse;
-import com.lofi.lofiapps.model.entity.JpaDocument;
-import com.lofi.lofiapps.repository.JpaDocumentRepository;
+import com.lofi.lofiapps.repository.DocumentRepository;
 import com.lofi.lofiapps.service.StorageService;
 import java.net.URL;
 import java.util.UUID;
@@ -15,14 +15,14 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class GetPresignedDownloadUrlUseCase {
-  private final JpaDocumentRepository documentRepository;
+  private final DocumentRepository documentRepository;
   private final StorageService storageService;
 
   @Value("${app.storage.bucket-name:lofi-bucket}")
   private String bucketName;
 
   public DownloadDocumentResponse execute(UUID documentId, UUID userId, boolean isAdmin) {
-    JpaDocument document =
+    Document document =
         documentRepository
             .findById(documentId)
             .orElseThrow(

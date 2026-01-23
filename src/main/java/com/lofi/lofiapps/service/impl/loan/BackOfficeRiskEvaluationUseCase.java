@@ -1,10 +1,10 @@
 package com.lofi.lofiapps.service.impl.loan;
 
-import com.lofi.lofiapps.model.dto.response.BackOfficeRiskEvaluationResponse;
-import com.lofi.lofiapps.model.entity.JpaDocument;
-import com.lofi.lofiapps.model.entity.Loan;
-import com.lofi.lofiapps.model.enums.DocumentType;
-import com.lofi.lofiapps.repository.JpaDocumentRepository;
+import com.lofi.lofiapps.dto.response.BackOfficeRiskEvaluationResponse;
+import com.lofi.lofiapps.entity.Document;
+import com.lofi.lofiapps.entity.Loan;
+import com.lofi.lofiapps.enums.DocumentType;
+import com.lofi.lofiapps.repository.DocumentRepository;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class BackOfficeRiskEvaluationUseCase {
 
-  private final JpaDocumentRepository documentRepository;
+  private final DocumentRepository documentRepository;
 
   /**
    * Back Office risk evaluation assistance.
@@ -81,7 +81,7 @@ public class BackOfficeRiskEvaluationUseCase {
     }
 
     // Document verification per Workflow Section 6.2 & 7.3
-    List<JpaDocument> docs = documentRepository.findByLoanId(loan.getId());
+    List<Document> docs = documentRepository.findByLoanId(loan.getId());
     boolean hasPayslip = docs.stream().anyMatch(d -> d.getDocumentType() == DocumentType.PAYSLIP);
     boolean hasBankStatement =
         docs.stream().anyMatch(d -> d.getDocumentType() == DocumentType.BANK_STATEMENT);

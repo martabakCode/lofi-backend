@@ -1,11 +1,11 @@
 package com.lofi.lofiapps.service.impl.rbac;
 
+import com.lofi.lofiapps.dto.request.AssignPermissionsRequest;
+import com.lofi.lofiapps.entity.Permission;
+import com.lofi.lofiapps.entity.Role;
 import com.lofi.lofiapps.exception.ResourceNotFoundException;
-import com.lofi.lofiapps.model.dto.request.AssignPermissionsRequest;
-import com.lofi.lofiapps.model.entity.JpaPermission;
-import com.lofi.lofiapps.model.entity.JpaRole;
-import com.lofi.lofiapps.repository.JpaPermissionRepository;
-import com.lofi.lofiapps.repository.JpaRoleRepository;
+import com.lofi.lofiapps.repository.PermissionRepository;
+import com.lofi.lofiapps.repository.RoleRepository;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
@@ -16,17 +16,17 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class AssignPermissionsToRoleUseCase {
-  private final JpaRoleRepository roleRepository;
-  private final JpaPermissionRepository permissionRepository;
+  private final RoleRepository roleRepository;
+  private final PermissionRepository permissionRepository;
 
   @Transactional
   public void execute(UUID roleId, AssignPermissionsRequest request) {
-    JpaRole role =
+    Role role =
         roleRepository
             .findById(roleId)
             .orElseThrow(() -> new ResourceNotFoundException("Role", "id", roleId.toString()));
 
-    List<JpaPermission> permissions = permissionRepository.findAllById(request.getPermissionIds());
+    List<Permission> permissions = permissionRepository.findAllById(request.getPermissionIds());
 
     if (permissions.size() != request.getPermissionIds().size()) {
       throw new ResourceNotFoundException(
