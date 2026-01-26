@@ -16,10 +16,14 @@ import org.springframework.stereotype.Component;
 /**
  * Back Office Risk Evaluation UseCase.
  *
- * <p>Per MCP Rules & Workflow Section 7.3 (Back Office Workflow - Final Authority): - Receive
+ * <p>
+ * Per MCP Rules & Workflow Section 7.3 (Back Office Workflow - Final
+ * Authority): - Receive
  * Approved Loan → Recalculate Risk → Final Approve → Disbursement
  *
- * <p>Back Office wajib cek per Workflow: - DBR / DSR - Slip gaji - Rekening koran - Kondisi rumah -
+ * <p>
+ * Back Office wajib cek per Workflow: - DBR / DSR - Slip gaji - Rekening koran
+ * - Kondisi rumah -
  * Riwayat SLIK - Konsistensi data
  */
 @Slf4j
@@ -27,19 +31,27 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class BackOfficeRiskEvaluationUseCase {
 
+  private final com.lofi.lofiapps.repository.LoanRepository loanRepository;
+
   private final DocumentRepository documentRepository;
 
   /**
    * Back Office risk evaluation assistance.
    *
-   * <p>Per Notification Workflow Section 4.4 & 4.5: - Final approve triggers: Customer (FCM),
-   * Branch Manager (FCM), Email to Customer - Disbursement triggers: Customer (FCM), Email with
+   * <p>
+   * Per Notification Workflow Section 4.4 & 4.5: - Final approve triggers:
+   * Customer (FCM),
+   * Branch Manager (FCM), Email to Customer - Disbursement triggers: Customer
+   * (FCM), Email with
    * Amount, Reference, Date
    *
-   * @param loan the loan to evaluate for risk
-   * @return back office risk evaluation response with checklist and risk factors
+   * @param loanId the loan id to evaluate
+   * @return evaluation response including cibil and admin checks
    */
-  public BackOfficeRiskEvaluationResponse execute(Loan loan) {
+  public BackOfficeRiskEvaluationResponse execute(java.util.UUID loanId) {
+    Loan loan = loanRepository
+        .findById(loanId)
+        .orElseThrow(() -> new IllegalArgumentException("Loan not found: " + loanId));
     log.info("Executing BackOfficeRiskEvaluationUseCase for loan: {}", loan.getId());
 
     double confidence = 0.90;
@@ -83,8 +95,7 @@ public class BackOfficeRiskEvaluationUseCase {
     // Document verification per Workflow Section 6.2 & 7.3
     List<Document> docs = documentRepository.findByLoanId(loan.getId());
     boolean hasPayslip = docs.stream().anyMatch(d -> d.getDocumentType() == DocumentType.PAYSLIP);
-    boolean hasBankStatement =
-        docs.stream().anyMatch(d -> d.getDocumentType() == DocumentType.BANK_STATEMENT);
+    boolean hasBankStatement = docs.stream().anyMatch(d -> d.getDocumentType() == DocumentType.BANK_STATEMENT);
 
     if (!hasPayslip) {
       keyRiskFactors.add("Missing Salary Slip");

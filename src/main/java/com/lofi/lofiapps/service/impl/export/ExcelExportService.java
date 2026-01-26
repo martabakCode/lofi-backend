@@ -22,7 +22,7 @@ public class ExcelExportService {
 
       // Header Row
       Row headerRow = sheet.createRow(0);
-      String[] columns = {"Metric", "Value"};
+      String[] columns = { "Metric", "Value" };
 
       CellStyle headerStyle = createHeaderStyle(workbook);
 
@@ -89,7 +89,7 @@ public class ExcelExportService {
 
       // Header Row
       Row headerRow = sheet.createRow(4);
-      String[] columns = {"Stage", "Status", "Action By", "Duration (Mins)"};
+      String[] columns = { "Stage", "Status", "Action By", "Duration (Mins)" };
       CellStyle headerStyle = createHeaderStyle(workbook);
 
       for (int i = 0; i < columns.length; i++) {

@@ -17,6 +17,7 @@ public class LoginUseCase {
   private final AuthenticationManager authenticationManager;
   private final JwtUtils jwtUtils;
   private final com.lofi.lofiapps.repository.RefreshTokenRepository refreshTokenRepository;
+  private final com.lofi.lofiapps.repository.UserRepository userRepository;
 
   public LoginResponse execute(LoginRequest request) {
     Authentication authentication =
@@ -43,6 +44,16 @@ public class LoginUseCase {
             .build();
 
     refreshTokenRepository.save(refreshToken);
+
+    // Update FCM Token if present
+    if (request.getFcmToken() != null && !request.getFcmToken().isEmpty()) {
+      com.lofi.lofiapps.entity.User user =
+          userRepository.findById(userPrincipal.getId()).orElse(null);
+      if (user != null) {
+        user.setFirebaseToken(request.getFcmToken());
+        userRepository.save(user);
+      }
+    }
 
     return LoginResponse.builder()
         .accessToken(jwt)

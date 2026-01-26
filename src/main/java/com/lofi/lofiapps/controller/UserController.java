@@ -7,6 +7,8 @@ import com.lofi.lofiapps.dto.response.UserProfileResponse;
 import com.lofi.lofiapps.dto.response.UserSummaryResponse;
 import com.lofi.lofiapps.security.service.UserPrincipal;
 import com.lofi.lofiapps.service.impl.admin.AdminForceLogoutUseCase;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -16,8 +18,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/users")
@@ -96,8 +96,8 @@ public class UserController {
   @GetMapping("/{id}/eligibility")
   @PreAuthorize("hasRole('ADMIN') or hasRole('MARKETING') or hasRole('BRANCH_MANAGER')")
   @Operation(summary = "Check User Eligibility via AI")
-  public ResponseEntity<ApiResponse<com.lofi.lofiapps.dto.response.EligibilityAnalysisResponse>> checkEligibility(
-      @PathVariable UUID id) {
+  public ResponseEntity<ApiResponse<com.lofi.lofiapps.dto.response.EligibilityAnalysisResponse>>
+      checkEligibility(@PathVariable UUID id) {
     return ResponseEntity.ok(ApiResponse.success(userService.analyzeEligibility(id)));
   }
 }

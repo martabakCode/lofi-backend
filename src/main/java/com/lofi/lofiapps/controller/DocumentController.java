@@ -7,6 +7,8 @@ import com.lofi.lofiapps.dto.response.PresignUploadResponse;
 import com.lofi.lofiapps.security.jwt.JwtUtils;
 import com.lofi.lofiapps.service.impl.document.GetPresignedDownloadUrlUseCase;
 import com.lofi.lofiapps.service.impl.document.PresignUploadUseCase;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -15,8 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/documents")
@@ -42,10 +42,12 @@ public class DocumentController {
       @PathVariable UUID id, HttpServletRequest httpRequest) {
 
     UUID userId = getCurrentUserId(httpRequest);
-    boolean isAdmin = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
-        .anyMatch(
-            a -> a.getAuthority().equals("ROLE_ADMIN")
-                || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+    boolean isAdmin =
+        SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+            .anyMatch(
+                a ->
+                    a.getAuthority().equals("ROLE_ADMIN")
+                        || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
 
     return ResponseEntity.ok(
         ApiResponse.success(getPresignedDownloadUrlUseCase.execute(id, userId, isAdmin)));

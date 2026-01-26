@@ -4,13 +4,13 @@ import com.lofi.lofiapps.dto.request.*;
 import com.lofi.lofiapps.dto.response.*;
 import com.lofi.lofiapps.security.service.UserPrincipal;
 import com.lofi.lofiapps.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.Operation;
 
 @RestController
 @RequestMapping("/auth")
@@ -79,18 +79,20 @@ public class AuthController {
   @GetMapping("/me")
   @Operation(summary = "Get current user profile")
   public ResponseEntity<ApiResponse<UserInfoResponse>> getCurrentUser() {
-    UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    UserPrincipal userPrincipal =
+        (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-    UserInfoResponse response = UserInfoResponse.builder()
-        .id(userPrincipal.getId())
-        .email(userPrincipal.getEmail())
-        .username(userPrincipal.getUsername())
-        .branchId(userPrincipal.getBranchId())
-        .branchName(userPrincipal.getBranchName())
-        .plafond(userPrincipal.getPlafond())
-        .roles(userPrincipal.getRoles())
-        .permissions(userPrincipal.getPermissions())
-        .build();
+    UserInfoResponse response =
+        UserInfoResponse.builder()
+            .id(userPrincipal.getId())
+            .email(userPrincipal.getEmail())
+            .username(userPrincipal.getUsername())
+            .branchId(userPrincipal.getBranchId())
+            .branchName(userPrincipal.getBranchName())
+            .plafond(userPrincipal.getPlafond())
+            .roles(userPrincipal.getRoles())
+            .permissions(userPrincipal.getPermissions())
+            .build();
 
     return ResponseEntity.ok(ApiResponse.success(response, "User info retrieved successfully"));
   }

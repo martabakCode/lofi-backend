@@ -13,26 +13,35 @@ import org.springframework.stereotype.Component;
 /**
  * Loan Analyzer UseCase.
  *
- * <p>Per MCP Rules (AI MCP Position in Workflow): - AI hanya membantu analisis - AI memberi
+ * <p>
+ * Per MCP Rules (AI MCP Position in Workflow): - AI hanya membantu analisis -
+ * AI memberi
  * rekomendasi - AI tidak mengambil keputusan
  *
- * <p>Workflow Reference: Section 11 - AI Analysis (Optional) → Staff Review
+ * <p>
+ * Workflow Reference: Section 11 - AI Analysis (Optional) → Staff Review
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class AnalyzeLoanUseCase {
 
+  private final com.lofi.lofiapps.repository.LoanRepository loanRepository;
+
   /**
    * Analyze loan application for risk factors and recommendations.
    *
-   * <p>Per Workflow Section 10 - Failure & Block Conditions: - DBR > limit → REJECT - Data tidak
+   * <p>
+   * Per Workflow Section 10 - Failure & Block Conditions: - DBR > limit → REJECT
+   * - Data tidak
    * lengkap → BLOCK
    *
-   * @param loan the loan to analyze
+   * @param loanId the loan id to analyze
    * @return analysis response with confidence, risk flags, and recommendations
    */
-  public LoanAnalysisResponse execute(Loan loan) {
+  public LoanAnalysisResponse execute(java.util.UUID loanId) {
+    Loan loan = loanRepository.findById(loanId)
+        .orElseThrow(() -> new IllegalArgumentException("Loan not found: " + loanId));
     log.info("Executing AnalyzeLoanUseCase for loan: {}", loan.getId());
 
     List<String> riskFlags = new ArrayList<>();
@@ -41,14 +50,12 @@ public class AnalyzeLoanUseCase {
 
     BigDecimal amount = loan.getLoanAmount();
     Integer tenor = loan.getTenor();
-    BigDecimal income =
-        (loan.getCustomer() != null && loan.getCustomer().getUserBiodata() != null)
-            ? loan.getCustomer().getUserBiodata().getMonthlyIncome()
-            : null;
+    BigDecimal income = (loan.getCustomer() != null && loan.getCustomer().getUserBiodata() != null)
+        ? loan.getCustomer().getUserBiodata().getMonthlyIncome()
+        : null;
 
     double confidence = 0.88;
-    String summary =
-        "Loan application looks stable with some attention needed on DBR and Documents.";
+    String summary = "Loan application looks stable with some attention needed on DBR and Documents.";
 
     // High amount risk check
     if (amount != null && amount.compareTo(new BigDecimal("100000000")) > 0) {

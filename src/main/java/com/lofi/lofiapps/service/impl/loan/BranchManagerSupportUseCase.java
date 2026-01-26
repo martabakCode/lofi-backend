@@ -12,10 +12,14 @@ import org.springframework.stereotype.Component;
 /**
  * Branch Manager Support UseCase.
  *
- * <p>Per MCP Rules & Workflow Section 7.2 (Branch Manager Workflow): - Bisa approve SELAMA plafon
+ * <p>
+ * Per MCP Rules & Workflow Section 7.2 (Branch Manager Workflow): - Bisa
+ * approve SELAMA plafon
  * cabang cukup - Yang melewati plafon → auto disabled
  *
- * <p>Per Workflow Section 2 - Global Rules: - Tidak ada approve jika plafon terlampaui - Approval
+ * <p>
+ * Per Workflow Section 2 - Global Rules: - Tidak ada approve jika plafon
+ * terlampaui - Approval
  * bersifat berjenjang
  */
 @Slf4j
@@ -23,16 +27,23 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class BranchManagerSupportUseCase {
 
+  private final com.lofi.lofiapps.repository.LoanRepository loanRepository;
+
   /**
    * Branch Manager decision support analysis.
    *
-   * <p>Per Notification Workflow Section 4.3: - Trigger: POST /loans/{id}/approve - Notify:
+   * <p>
+   * Per Notification Workflow Section 4.3: - Trigger: POST /loans/{id}/approve -
+   * Notify:
    * Customer (FCM), Back Office (FCM) - Message: Loan approved by Branch Manager
    *
-   * @param loan the loan to analyze for BM approval
-   * @return branch manager support response with risks and attention points
+   * @param loanId the loan id to check
+   * @return branch manager support response with checks
    */
-  public BranchManagerSupportResponse execute(Loan loan) {
+  public BranchManagerSupportResponse execute(java.util.UUID loanId) {
+    Loan loan = loanRepository
+        .findById(loanId)
+        .orElseThrow(() -> new IllegalArgumentException("Loan not found: " + loanId));
     log.info("Executing BranchManagerSupportUseCase for loan: {}", loan.getId());
 
     List<String> branchRisks = new ArrayList<>();

@@ -1,5 +1,8 @@
 package com.lofi.lofiapps.service.impl.notification;
 
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingException;
+import com.google.firebase.messaging.Message;
 import com.lofi.lofiapps.dto.response.EmailDraftResponse;
 import com.lofi.lofiapps.dto.response.NotificationGenerationResponse;
 import com.lofi.lofiapps.entity.Notification;
@@ -19,6 +22,7 @@ public class LogNotificationService implements NotificationService {
   private final NotificationRepository notificationRepository;
   private final NotificationGenerationUseCase notificationGenerationUseCase;
   private final EmailDraftGenerationUseCase emailDraftGenerationUseCase;
+  private final FirebaseMessaging firebaseMessaging;
 
   @Override
   public void notifyForgotPassword(String email, String token) {
@@ -40,8 +44,26 @@ public class LogNotificationService implements NotificationService {
   }
 
   @Override
-  public void sendPushNotification(String token, String title, String message) {
-    log.info("[PUSH] Token: {}, Title: {}, Message: {}", token, title, message);
+  public void sendPushNotification(String token, String title, String messageContent) {
+    if (token == null || token.isEmpty()) {
+      log.warn("FCM token is empty, skipping push notification");
+      return;
+    }
+    log.info("[PUSH] Token: {}, Title: {}, Message: {}", token, title, messageContent);
+    try {
+      com.google.firebase.messaging.Notification notification =
+          com.google.firebase.messaging.Notification.builder()
+              .setTitle(title)
+              .setBody(messageContent)
+              .build();
+
+      Message message = Message.builder().setToken(token).setNotification(notification).build();
+
+      String response = firebaseMessaging.send(message);
+      log.info("Successfully sent FCM message: {}", response);
+    } catch (FirebaseMessagingException e) {
+      log.error("Error sending FCM message: {}", e.getMessage());
+    }
   }
 
   @Override

@@ -4,6 +4,8 @@ import com.lofi.lofiapps.dto.request.CreateProductRequest;
 import com.lofi.lofiapps.dto.response.*;
 import com.lofi.lofiapps.dto.response.PagedResponse;
 import com.lofi.lofiapps.dto.response.ProductResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -11,15 +13,14 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import com.lofi.lofiapps.service.ProductService;
 
 @RestController
 @RequestMapping("/products")
 @RequiredArgsConstructor
 @Tag(name = "Product", description = "Product Management")
 public class ProductController {
-  private final com.lofi.lofiapps.service.ProductService productService;
+  private final ProductService productService;
 
   @PostMapping
   @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")

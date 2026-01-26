@@ -12,6 +12,5 @@ public interface ProductService {
 
   PagedResponse<ProductResponse> getProducts(Boolean isActive, Pageable pageable);
 
-  // AI
   ProductRecommendationResponse recommendProduct(UUID userId);
 }
