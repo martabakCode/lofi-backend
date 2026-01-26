@@ -15,7 +15,8 @@ public interface UserService {
 
   UserProfileResponse getMyProfile(); // Implicitly gets current user
 
-  PagedResponse<UserSummaryResponse> getUsers(Pageable pageable);
+  PagedResponse<UserSummaryResponse> getUsers(
+      com.lofi.lofiapps.dto.request.UserCriteria criteria, Pageable pageable);
 
   UserProfileResponse updateProfile(UpdateProfileRequest request);
 

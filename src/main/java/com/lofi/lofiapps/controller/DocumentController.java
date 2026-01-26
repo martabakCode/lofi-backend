@@ -2,11 +2,8 @@ package com.lofi.lofiapps.controller;
 
 import com.lofi.lofiapps.dto.request.PresignUploadRequest;
 import com.lofi.lofiapps.dto.response.*;
-import com.lofi.lofiapps.dto.response.DownloadDocumentResponse;
-import com.lofi.lofiapps.dto.response.PresignUploadResponse;
 import com.lofi.lofiapps.security.jwt.JwtUtils;
-import com.lofi.lofiapps.service.impl.document.GetPresignedDownloadUrlUseCase;
-import com.lofi.lofiapps.service.impl.document.PresignUploadUseCase;
+import com.lofi.lofiapps.service.impl.DocumentServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,8 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Tag(name = "Document", description = "Document Management")
 public class DocumentController {
-  private final PresignUploadUseCase presignUploadUseCase;
-  private final GetPresignedDownloadUrlUseCase getPresignedDownloadUrlUseCase;
+  private final DocumentServiceImpl documentService;
   private final JwtUtils jwtUtils;
 
   @PostMapping("/presign-upload")
@@ -33,7 +29,7 @@ public class DocumentController {
       @Valid @RequestBody PresignUploadRequest request, HttpServletRequest httpRequest) {
 
     UUID userId = getCurrentUserId(httpRequest);
-    return ResponseEntity.ok(ApiResponse.success(presignUploadUseCase.execute(request, userId)));
+    return ResponseEntity.ok(ApiResponse.success(documentService.presignUpload(request, userId)));
   }
 
   @GetMapping("/{id}/download")
@@ -50,7 +46,7 @@ public class DocumentController {
                         || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
 
     return ResponseEntity.ok(
-        ApiResponse.success(getPresignedDownloadUrlUseCase.execute(id, userId, isAdmin)));
+        ApiResponse.success(documentService.presignDownload(id, userId, isAdmin)));
   }
 
   private UUID getCurrentUserId(HttpServletRequest request) {

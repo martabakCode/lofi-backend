@@ -1,12 +1,14 @@
 package com.lofi.lofiapps.controller;
 
 import com.lofi.lofiapps.dto.request.UpdateProfileRequest;
-import com.lofi.lofiapps.dto.response.*;
+import com.lofi.lofiapps.dto.request.UserCriteria;
+import com.lofi.lofiapps.dto.response.ApiResponse;
 import com.lofi.lofiapps.dto.response.PagedResponse;
 import com.lofi.lofiapps.dto.response.UserProfileResponse;
 import com.lofi.lofiapps.dto.response.UserSummaryResponse;
 import com.lofi.lofiapps.security.service.UserPrincipal;
-import com.lofi.lofiapps.service.impl.admin.AdminForceLogoutUseCase;
+import com.lofi.lofiapps.service.impl.AdminServiceImpl;
+import com.lofi.lofiapps.service.impl.UserServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -24,8 +26,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Tag(name = "User", description = "User Management")
 public class UserController {
-  private final com.lofi.lofiapps.service.UserService userService;
-  private final AdminForceLogoutUseCase adminForceLogoutUseCase;
+  private final AdminServiceImpl adminService;
+  private final UserServiceImpl userService;
 
   @GetMapping
   @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
@@ -36,10 +38,9 @@ public class UserController {
       @RequestParam(required = false) java.util.UUID branchId,
       @PageableDefault(size = 10) Pageable pageable) {
 
-    // Note: I will need to update UserService to handle criteria if strictly
-    // needed,
-    // but for now I'll use the simplified method.
-    return ResponseEntity.ok(ApiResponse.success(userService.getUsers(pageable)));
+    UserCriteria criteria =
+        UserCriteria.builder().status(status).roleName(roleName).branchId(branchId).build();
+    return ResponseEntity.ok(ApiResponse.success(userService.getUsers(criteria, pageable)));
   }
 
   @PostMapping
@@ -69,7 +70,7 @@ public class UserController {
   @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
   @Operation(summary = "Force logout a user")
   public ResponseEntity<ApiResponse<Void>> forceLogout(@PathVariable UUID userId) {
-    adminForceLogoutUseCase.execute(userId);
+    adminService.forceLogoutUser(userId);
     return ResponseEntity.ok(ApiResponse.success(null, "User forced logout successfully"));
   }
 

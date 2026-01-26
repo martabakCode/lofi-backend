@@ -1,0 +1,67 @@
+package com.lofi.lofiapps.service.impl.usecase.auth;
+
+import com.lofi.lofiapps.dto.request.LoginRequest;
+import com.lofi.lofiapps.dto.response.LoginResponse;
+import com.lofi.lofiapps.repository.RefreshTokenRepository;
+import com.lofi.lofiapps.repository.UserRepository;
+import com.lofi.lofiapps.security.jwt.JwtUtils;
+import com.lofi.lofiapps.security.service.UserPrincipal;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class LoginUseCase {
+  private final AuthenticationManager authenticationManager;
+  private final JwtUtils jwtUtils;
+  private final RefreshTokenRepository refreshTokenRepository;
+  private final UserRepository userRepository;
+
+  public LoginResponse execute(LoginRequest request) {
+    Authentication authentication =
+        authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+
+    SecurityContextHolder.getContext().setAuthentication(authentication);
+    String jwt = jwtUtils.generateJwtToken(authentication);
+    long expiration = jwtUtils.getExpirationFromJwtToken(jwt);
+
+    String refreshTokenStr = jwtUtils.generateRefreshToken(authentication);
+    long refreshExpiration = jwtUtils.getExpirationFromJwtToken(refreshTokenStr);
+    UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+
+    // Revoke existing tokens
+    refreshTokenRepository.deleteByUserId(userPrincipal.getId());
+
+    com.lofi.lofiapps.entity.RefreshToken refreshToken =
+        com.lofi.lofiapps.entity.RefreshToken.builder()
+            .user(com.lofi.lofiapps.entity.User.builder().id(userPrincipal.getId()).build())
+            .token(refreshTokenStr)
+            .expiryDate(java.time.Instant.now().plusMillis(refreshExpiration))
+            .revoked(false)
+            .build();
+
+    refreshTokenRepository.save(refreshToken);
+
+    // Update FCM Token if present
+    if (request.getFcmToken() != null && !request.getFcmToken().isEmpty()) {
+      com.lofi.lofiapps.entity.User user =
+          userRepository.findById(userPrincipal.getId()).orElse(null);
+      if (user != null) {
+        user.setFirebaseToken(request.getFcmToken());
+        userRepository.save(user);
+      }
+    }
+
+    return LoginResponse.builder()
+        .accessToken(jwt)
+        .refreshToken(refreshTokenStr)
+        .expiresIn(expiration / 1000) // Seconds
+        .tokenType("Bearer")
+        .build();
+  }
+}

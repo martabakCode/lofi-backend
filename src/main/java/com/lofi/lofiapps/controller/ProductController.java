@@ -4,6 +4,7 @@ import com.lofi.lofiapps.dto.request.CreateProductRequest;
 import com.lofi.lofiapps.dto.response.*;
 import com.lofi.lofiapps.dto.response.PagedResponse;
 import com.lofi.lofiapps.dto.response.ProductResponse;
+import com.lofi.lofiapps.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -13,7 +14,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import com.lofi.lofiapps.service.ProductService;
 
 @RestController
 @RequestMapping("/products")
@@ -44,7 +44,8 @@ public class ProductController {
   @Operation(summary = "Get AI Product Recommendation for a User")
   public ResponseEntity<ApiResponse<ProductRecommendationResponse>> recommendProduct(
       @RequestParam(required = false) java.util.UUID userId,
-      @org.springframework.security.core.annotation.AuthenticationPrincipal com.lofi.lofiapps.security.service.UserPrincipal userPrincipal) {
+      @org.springframework.security.core.annotation.AuthenticationPrincipal
+          com.lofi.lofiapps.security.service.UserPrincipal userPrincipal) {
 
     java.util.UUID targetUserId = userId;
     if (targetUserId == null) {

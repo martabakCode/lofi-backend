@@ -10,7 +10,7 @@ import com.lofi.lofiapps.mapper.ProductDtoMapper;
 import com.lofi.lofiapps.repository.ProductRepository;
 import com.lofi.lofiapps.repository.UserRepository;
 import com.lofi.lofiapps.service.ProductService;
-import com.lofi.lofiapps.service.impl.product.RecommendProductUseCase;
+import com.lofi.lofiapps.service.impl.usecase.product.RecommendProductUseCase;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;

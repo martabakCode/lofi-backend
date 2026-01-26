@@ -3,7 +3,7 @@ package com.lofi.lofiapps.service.impl;
 import com.lofi.lofiapps.dto.request.*;
 import com.lofi.lofiapps.dto.response.*;
 import com.lofi.lofiapps.service.RbacService;
-import com.lofi.lofiapps.service.impl.rbac.*;
+import com.lofi.lofiapps.service.impl.usecase.rbac.*;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;

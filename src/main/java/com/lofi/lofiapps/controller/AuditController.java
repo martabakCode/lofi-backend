@@ -3,7 +3,7 @@ package com.lofi.lofiapps.controller;
 import com.lofi.lofiapps.dto.response.*;
 import com.lofi.lofiapps.dto.response.AuditLogResponse;
 import com.lofi.lofiapps.dto.response.PagedResponse;
-import com.lofi.lofiapps.service.impl.audit.GetAuditLogsUseCase;
+import com.lofi.lofiapps.service.impl.AuditServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @Tag(name = "Audit", description = "Audit Logs Management")
 public class AuditController {
-  private final GetAuditLogsUseCase getAuditLogsUseCase;
+  private final AuditServiceImpl auditService;
 
   @GetMapping
   @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
@@ -31,6 +31,6 @@ public class AuditController {
               sort = "createdAt",
               direction = org.springframework.data.domain.Sort.Direction.DESC)
           Pageable pageable) {
-    return ResponseEntity.ok(ApiResponse.success(getAuditLogsUseCase.execute(pageable)));
+    return ResponseEntity.ok(ApiResponse.success(auditService.getAuditLogs(pageable)));
   }
 }
