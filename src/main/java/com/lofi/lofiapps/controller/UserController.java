@@ -1,11 +1,15 @@
 package com.lofi.lofiapps.controller;
 
+import com.lofi.lofiapps.dto.request.CreateUserRequest;
 import com.lofi.lofiapps.dto.request.UpdateProfileRequest;
 import com.lofi.lofiapps.dto.request.UserCriteria;
 import com.lofi.lofiapps.dto.response.ApiResponse;
+import com.lofi.lofiapps.dto.response.EligibilityAnalysisResponse;
 import com.lofi.lofiapps.dto.response.PagedResponse;
 import com.lofi.lofiapps.dto.response.UserProfileResponse;
 import com.lofi.lofiapps.dto.response.UserSummaryResponse;
+import com.lofi.lofiapps.enums.RoleName;
+import com.lofi.lofiapps.enums.UserStatus;
 import com.lofi.lofiapps.security.service.UserPrincipal;
 import com.lofi.lofiapps.service.impl.AdminServiceImpl;
 import com.lofi.lofiapps.service.impl.UserServiceImpl;
@@ -16,10 +20,12 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/users")
@@ -33,9 +39,9 @@ public class UserController {
   @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
   @Operation(summary = "Get all users")
   public ResponseEntity<ApiResponse<PagedResponse<UserSummaryResponse>>> getUsers(
-      @RequestParam(required = false) com.lofi.lofiapps.enums.UserStatus status,
-      @RequestParam(required = false) com.lofi.lofiapps.enums.RoleName roleName,
-      @RequestParam(required = false) java.util.UUID branchId,
+      @RequestParam(required = false) UserStatus status,
+      @RequestParam(required = false) RoleName roleName,
+      @RequestParam(required = false) UUID branchId,
       @PageableDefault(size = 10) Pageable pageable) {
 
     UserCriteria criteria =
@@ -47,7 +53,7 @@ public class UserController {
   @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
   @Operation(summary = "Create a new user")
   public ResponseEntity<ApiResponse<UserSummaryResponse>> createUser(
-      @Valid @RequestBody com.lofi.lofiapps.dto.request.CreateUserRequest request) {
+      @Valid @RequestBody CreateUserRequest request) {
     return ResponseEntity.ok(
         ApiResponse.success(userService.createUser(request), "User created successfully"));
   }
@@ -58,12 +64,40 @@ public class UserController {
     return ResponseEntity.ok(ApiResponse.success(userService.getMyProfile()));
   }
 
-  @PutMapping("/me")
+  @PutMapping(value = "/me", consumes = MediaType.APPLICATION_JSON_VALUE)
   @Operation(summary = "Update my profile")
   public ResponseEntity<ApiResponse<UserProfileResponse>> updateProfile(
+      @RequestHeader(value = "User-Agent", defaultValue = "Unknown") String userAgent,
       @Valid @RequestBody UpdateProfileRequest request) {
     return ResponseEntity.ok(
-        ApiResponse.success(userService.updateProfile(request), "Profile updated successfully"));
+        ApiResponse.success(
+            userService.updateProfile(request, userAgent), "Profile updated successfully"));
+  }
+
+  @PutMapping(value = "/me/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @Operation(summary = "Update my profile photo")
+  public ResponseEntity<ApiResponse<UserProfileResponse>> updateProfilePhoto(
+      @RequestPart(value = "photo") MultipartFile photo) {
+    return ResponseEntity.ok(
+        ApiResponse.success(
+            userService.updateProfilePicture(photo), "Profile photo updated successfully"));
+  }
+
+  @GetMapping(value = "/me/photo", produces = MediaType.IMAGE_JPEG_VALUE)
+  @Operation(summary = "Get my profile photo")
+  public ResponseEntity<byte[]> getMyProfilePhoto() {
+    Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    if (!(principal instanceof UserPrincipal)) {
+      return ResponseEntity.status(401).build();
+    }
+    UUID userId = ((UserPrincipal) principal).getId();
+    return ResponseEntity.ok(userService.getProfilePhoto(userId));
+  }
+
+  @GetMapping(value = "/{userId}/photo", produces = MediaType.IMAGE_JPEG_VALUE)
+  @Operation(summary = "Get user profile photo by ID")
+  public ResponseEntity<byte[]> getUserProfilePhoto(@PathVariable UUID userId) {
+    return ResponseEntity.ok(userService.getProfilePhoto(userId));
   }
 
   @PostMapping("/admin/users/{userId}/force-logout")
@@ -97,8 +131,8 @@ public class UserController {
   @GetMapping("/{id}/eligibility")
   @PreAuthorize("hasRole('ADMIN') or hasRole('MARKETING') or hasRole('BRANCH_MANAGER')")
   @Operation(summary = "Check User Eligibility via AI")
-  public ResponseEntity<ApiResponse<com.lofi.lofiapps.dto.response.EligibilityAnalysisResponse>>
-      checkEligibility(@PathVariable UUID id) {
+  public ResponseEntity<ApiResponse<EligibilityAnalysisResponse>> checkEligibility(
+      @PathVariable UUID id) {
     return ResponseEntity.ok(ApiResponse.success(userService.analyzeEligibility(id)));
   }
 }

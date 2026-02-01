@@ -37,7 +37,7 @@ public class LoanController {
       @RequestParam(required = false) LoanStatus status,
       @RequestParam(required = false) UUID branchId,
       @RequestParam(required = false) UUID customerId,
-      @PageableDefault(size = 10, sort = "createdDate", direction = Sort.Direction.DESC)
+      @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
           Pageable pageable) {
 
     LoanCriteria criteria =
@@ -51,7 +51,7 @@ public class LoanController {
   @Operation(summary = "Get my loans")
   public ResponseEntity<ApiResponse<PagedResponse<LoanResponse>>> getMyLoans(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
-      @PageableDefault(size = 10, sort = "createdDate", direction = Sort.Direction.DESC)
+      @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
           Pageable pageable) {
     return ResponseEntity.ok(
         ApiResponse.success(loanService.getMyLoans(userPrincipal.getId(), pageable)));
@@ -62,7 +62,7 @@ public class LoanController {
   @Operation(summary = "Get my loan history")
   public ResponseEntity<ApiResponse<PagedResponse<LoanResponse>>> getLoanHistory(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
-      @PageableDefault(size = 10, sort = "createdDate", direction = Sort.Direction.DESC)
+      @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
           Pageable pageable) {
     return ResponseEntity.ok(
         ApiResponse.success(loanService.getLoanHistory(userPrincipal.getId(), pageable)));
@@ -189,6 +189,18 @@ public class LoanController {
         ApiResponse.success(
             loanService.applyLoan(request, userPrincipal.getId(), userPrincipal.getUsername()),
             "Loan applied successfully"));
+  }
+
+  @PostMapping("/marketing/apply-on-behalf")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('MARKETING')")
+  @Operation(summary = "Marketing apply for a loan on behalf of a customer")
+  public ResponseEntity<ApiResponse<LoanResponse>> marketingApplyLoan(
+      @Valid @RequestBody com.lofi.lofiapps.dto.request.MarketingApplyLoanRequest request,
+      @AuthenticationPrincipal UserPrincipal userPrincipal) {
+    return ResponseEntity.ok(
+        ApiResponse.success(
+            loanService.marketingApplyLoan(request, userPrincipal.getUsername()),
+            "Loan applied on behalf of customer successfully"));
   }
 
   @GetMapping("/{id}")

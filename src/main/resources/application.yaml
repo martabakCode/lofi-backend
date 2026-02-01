@@ -4,6 +4,8 @@ server:
   servlet:
     context-path: "/api/v1"
 spring:
+  profiles:
+    active: "dev"
   datasource:
     url: "jdbc:sqlserver://${DB_HOST:localhost}:${DB_PORT:1433};databaseName=${DB_NAME:lofidb};encrypt=true;trustServerCertificate=true"
     username: "${DB_USERNAME}"

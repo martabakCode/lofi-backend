@@ -1,6 +1,7 @@
 package com.lofi.lofiapps.entity;
 
 import com.lofi.lofiapps.enums.Gender;
+import com.lofi.lofiapps.enums.JobType;
 import com.lofi.lofiapps.enums.MaritalStatus;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -27,7 +28,6 @@ public class UserBiodata extends BaseEntity {
   private String incomeSource;
   private String incomeType;
   private BigDecimal monthlyIncome;
-  private int age;
   private String nik;
   private LocalDate dateOfBirth;
   private String placeOfBirth;
@@ -37,7 +37,6 @@ public class UserBiodata extends BaseEntity {
   private String district;
   private String subDistrict;
   private String postalCode;
-  private String phoneNumber;
 
   @Enumerated(EnumType.STRING)
   private Gender gender;
@@ -45,6 +44,29 @@ public class UserBiodata extends BaseEntity {
   @Enumerated(EnumType.STRING)
   private MaritalStatus maritalStatus;
 
-  private String education;
   private String occupation;
+
+  // Employment/Business Details
+  @Enumerated(EnumType.STRING)
+  private JobType jobType; // KARYAWAN, WIRASWASTA, PROFESIONAL
+
+  private String companyName;
+  private String jobPosition;
+  private Integer workDurationMonths;
+  private String workAddress;
+  private String officePhoneNumber;
+  private BigDecimal additionalIncome;
+
+  // Emergency Contact
+  private String emergencyContactName;
+  private String emergencyContactRelation;
+  private String emergencyContactPhone;
+  private String emergencyContactAddress;
+
+  // NPWP
+  private String npwpNumber;
+
+  // Age validation fields
+  private Integer ageAtLoanApplication;
+  private Integer ageAtLoanCompletion;
 }

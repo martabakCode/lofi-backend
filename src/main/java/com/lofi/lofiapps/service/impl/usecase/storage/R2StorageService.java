@@ -6,6 +6,7 @@ import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -18,6 +19,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 public class R2StorageService implements StorageService {
 
   private final S3Presigner s3Presigner;
+  private final S3Client s3Client;
 
   @Override
   public URL generatePresignedUploadUrl(
@@ -60,6 +62,37 @@ public class R2StorageService implements StorageService {
     } catch (Exception e) {
       log.error("Error generating presigned download URL", e);
       throw new RuntimeException("Error generating presigned download URL", e);
+    }
+  }
+
+  @Override
+  public void uploadFile(String bucketName, String objectKey, byte[] content, String contentType) {
+    try {
+      PutObjectRequest putObjectRequest =
+          PutObjectRequest.builder()
+              .bucket(bucketName)
+              .key(objectKey)
+              .contentType(contentType)
+              .build();
+
+      s3Client.putObject(
+          putObjectRequest, software.amazon.awssdk.core.sync.RequestBody.fromBytes(content));
+    } catch (Exception e) {
+      log.error("Error uploading file to R2", e);
+      throw new RuntimeException("Error uploading file to R2", e);
+    }
+  }
+
+  @Override
+  public byte[] downloadFile(String bucketName, String objectKey) {
+    try {
+      GetObjectRequest getObjectRequest =
+          GetObjectRequest.builder().bucket(bucketName).key(objectKey).build();
+
+      return s3Client.getObjectAsBytes(getObjectRequest).asByteArray();
+    } catch (Exception e) {
+      log.error("Error downloading file from R2", e);
+      throw new RuntimeException("Error downloading file from R2", e);
     }
   }
 }

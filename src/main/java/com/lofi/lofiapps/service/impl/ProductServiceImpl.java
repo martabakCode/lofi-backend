@@ -1,11 +1,13 @@
 package com.lofi.lofiapps.service.impl;
 
 import com.lofi.lofiapps.dto.request.CreateProductRequest;
+import com.lofi.lofiapps.dto.request.UpdateProductRequest;
 import com.lofi.lofiapps.dto.response.PagedResponse;
 import com.lofi.lofiapps.dto.response.ProductRecommendationResponse;
 import com.lofi.lofiapps.dto.response.ProductResponse;
 import com.lofi.lofiapps.entity.Product;
 import com.lofi.lofiapps.entity.User;
+import com.lofi.lofiapps.exception.ResourceNotFoundException;
 import com.lofi.lofiapps.mapper.ProductDtoMapper;
 import com.lofi.lofiapps.repository.ProductRepository;
 import com.lofi.lofiapps.repository.UserRepository;
@@ -66,5 +68,63 @@ public class ProductServiceImpl implements ProductService {
     List<Product> products = productRepository.findByIsActiveTrue();
 
     return recommendProductUseCase.execute(user, products);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public ProductResponse getAssignedProduct(UUID userId) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+    Product product = user.getProduct();
+    if (product == null) {
+      throw new IllegalArgumentException("No product assigned to this user");
+    }
+
+    return productDtoMapper.toResponse(product);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public ProductResponse getProductById(UUID id) {
+    Product product =
+        productRepository
+            .findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id.toString()));
+    return productDtoMapper.toResponse(product);
+  }
+
+  @Override
+  @Transactional
+  public ProductResponse updateProduct(UUID id, UpdateProductRequest request) {
+    Product product =
+        productRepository
+            .findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id.toString()));
+
+    product.setProductName(request.getProductName());
+    product.setDescription(request.getDescription());
+    product.setInterestRate(request.getInterestRate());
+    product.setMinTenor(request.getMinTenor());
+    product.setMaxTenor(request.getMaxTenor());
+    product.setMinLoanAmount(request.getMinLoanAmount());
+    product.setMaxLoanAmount(request.getMaxLoanAmount());
+    product.setAdminFee(request.getAdminFee());
+    product.setIsActive(request.getIsActive());
+
+    Product updatedProduct = productRepository.save(product);
+    return productDtoMapper.toResponse(updatedProduct);
+  }
+
+  @Override
+  @Transactional
+  public void deleteProduct(UUID id) {
+    Product product =
+        productRepository
+            .findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id.toString()));
+    productRepository.delete(product);
   }
 }

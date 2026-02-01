@@ -43,6 +43,14 @@ public class DisburseLoanUseCase {
     loan.setDisbursementReference(notes); // Using notes as reference
     loan.setLastStatusChangedAt(LocalDateTime.now());
 
+    // Log disbursement account information
+    log.info(
+        "Disbursing loan {} to account: {} - {} ({})",
+        loanId,
+        loan.getBankName(),
+        loan.getAccountNumber(),
+        loan.getAccountHolderName());
+
     Loan savedLoan = loanRepository.save(loan);
 
     // Save history

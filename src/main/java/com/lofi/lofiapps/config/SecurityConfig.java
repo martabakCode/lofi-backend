@@ -45,7 +45,9 @@ public class SecurityConfig {
   }
 
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain filterChain(
+      HttpSecurity http, com.lofi.lofiapps.security.RateLimitFilter rateLimitFilter)
+      throws Exception {
     http.csrf(AbstractHttpConfigurer::disable)
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
@@ -64,6 +66,8 @@ public class SecurityConfig {
                     .anyRequest()
                     .authenticated());
 
+    // Add rate limit filter before auth token filter
+    http.addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class);
     http.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();

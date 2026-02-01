@@ -1,36 +1,35 @@
 package com.lofi.lofiapps.security.service;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseToken;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class GoogleAuthService {
 
-  // reliable verification requires google-api-client or fetching public keys
-  // for now we will just parse the JWT to get email, assuming the
-  // gateway/frontend
-  // might have effectively done some checks or we will trust it for this
-  // prototype stage
-  // TODO: Add proper signature verification with Google's public keys
-  public String verifyGoogleToken(String idTokenString) {
+  private final FirebaseAuth firebaseAuth;
+
+  /**
+   * Verifies the Google ID token (Firebase ID token) using Firebase Admin SDK.
+   *
+   * @param idTokenString The ID token sent from the client.
+   * @return A GoogleUser object containing user details, or null if verification fails.
+   */
+  public GoogleUser verifyGoogleToken(String idTokenString) {
     try {
-      // Intentionally not signing key check here as we don't have google certs setup
-      // Just stripping the signature part for parsing claims if it's a valid JWT
-      // structure
-      String[] parts = idTokenString.split("\\.");
-      if (parts.length < 2) throw new IllegalArgumentException("Invalid Token");
-
-      // We can decode payload if we want, but let's assume we use a library in prod
-      // For this step, we will return a dummy or mocked email if the token looks
-      // "valid" structure
-      // OR better, we just trust the idToken is the "email" for test purposes if it
-      // is not a real JWT
-      // But looking at the requirement "Android Only", it sends a real ID token.
-
-      return "user@gmail.com"; // Mock return for development
+      FirebaseToken decodedToken = firebaseAuth.verifyIdToken(idTokenString);
+      return GoogleUser.builder()
+          .email(decodedToken.getEmail())
+          .name(decodedToken.getName())
+          .picture(decodedToken.getPicture())
+          .uid(decodedToken.getUid())
+          .build();
     } catch (Exception e) {
-      log.error("Google Token Verification Failed", e);
+      log.error("Firebase Token Verification Failed: {}", e.getMessage());
       return null;
     }
   }

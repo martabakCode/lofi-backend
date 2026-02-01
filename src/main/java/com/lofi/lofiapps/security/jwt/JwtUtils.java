@@ -16,13 +16,15 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class JwtUtils {
 
-  @Value("${lofi.app.jwtSecret:lofiapps_secret_key_lofiapps_secret_key}")
+  @Value("${lofi.app.jwtSecret}")
   private String jwtSecret;
 
-  @Value("${lofi.app.jwtExpirationMs:86400000}")
+  // Reduced to 30 minutes for banking security requirements
+  @Value("${lofi.app.jwtExpirationMs:1800000}")
   private int jwtExpirationMs;
 
-  @Value("${lofi.app.jwtRefreshExpirationMs:604800000}")
+  // Reduced to 1 day for refresh tokens
+  @Value("${lofi.app.jwtRefreshExpirationMs:86400000}")
   private int jwtRefreshExpirationMs;
 
   private Key getSigningKey() {

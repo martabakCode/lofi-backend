@@ -1,5 +1,9 @@
 package com.lofi.lofiapps.dto.response;
 
+import com.lofi.lofiapps.enums.Gender;
+import com.lofi.lofiapps.enums.MaritalStatus;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,6 +22,7 @@ public class UserProfileResponse {
   private String profilePictureUrl;
   private BranchInfo branch;
   private BiodataInfo biodata;
+  private ProductResponse product;
 
   @Data
   @Builder
@@ -26,10 +31,9 @@ public class UserProfileResponse {
   public static class BiodataInfo {
     private String incomeSource;
     private String incomeType;
-    private java.math.BigDecimal monthlyIncome;
-    private Integer age;
+    private BigDecimal monthlyIncome;
     private String nik;
-    private java.time.LocalDate dateOfBirth;
+    private LocalDate dateOfBirth;
     private String placeOfBirth;
     private String city;
     private String address;
@@ -37,9 +41,9 @@ public class UserProfileResponse {
     private String district;
     private String subDistrict;
     private String postalCode;
-    private com.lofi.lofiapps.enums.Gender gender;
-    private com.lofi.lofiapps.enums.MaritalStatus maritalStatus;
-    private String education;
+    private Gender gender;
+    private MaritalStatus maritalStatus;
+
     private String occupation;
   }
 
@@ -51,4 +55,7 @@ public class UserProfileResponse {
     private UUID id;
     private String name;
   }
+
+  /** Available plafond (remaining credit limit) after deducting approved/active loans */
+  private BigDecimal availablePlafond;
 }

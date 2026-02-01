@@ -60,4 +60,51 @@ public class Loan extends BaseEntity {
   private LocalDateTime disbursedAt;
   private String disbursementReference;
   private LocalDateTime lastStatusChangedAt;
+
+  @Column(precision = 10, scale = 8)
+  private BigDecimal longitude;
+
+  @Column(precision = 10, scale = 8)
+  private BigDecimal latitude;
+
+  // Income and NPWP
+  private BigDecimal declaredIncome;
+  private String npwpNumber;
+
+  // Employment/Business Details
+  @Enumerated(EnumType.STRING)
+  private com.lofi.lofiapps.enums.JobType jobType;
+
+  private String companyName;
+  private String jobPosition;
+  private Integer workDurationMonths;
+  private String workAddress;
+  private String officePhoneNumber;
+  private BigDecimal additionalIncome;
+
+  // Emergency Contact
+  private String emergencyContactName;
+  private String emergencyContactRelation;
+  private String emergencyContactPhone;
+  private String emergencyContactAddress;
+
+  // Down Payment
+  private BigDecimal downPayment;
+
+  // Loan Purpose (Alasan Meminjam)
+  @Column(columnDefinition = "TEXT")
+  private String purpose;
+
+  // Bank Account Information for Disbursement
+  private String bankName;
+  private String bankBranch;
+  private String accountNumber;
+  private String accountHolderName;
+
+  // Snapshot of product rates at loan creation (to prevent changes when product
+  // is edited)
+  @Column(precision = 5, scale = 2)
+  private BigDecimal interestRate;
+
+  private BigDecimal adminFee;
 }

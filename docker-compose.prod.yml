@@ -1,0 +1,145 @@
+---
+services:
+  app:
+    image: "${DOCKER_IMAGE:-lofiapps}:${VERSION:-latest}"
+    container_name: "lofiapps-api-prod"
+    ports:
+    - "${APP_PORT:-8080}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: "prod"
+      SERVER_PORT: "8080"
+      DB_HOST: "${DB_HOST:-sqlserver}"
+      DB_PORT: "${DB_PORT:-1433}"
+      DB_NAME: "${DB_NAME:-lofidb}"
+      DB_USERNAME: "${DB_USERNAME:-sa}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_EXPIRATION_MS: "${JWT_EXPIRATION_MS:-86400000}"
+      JWT_REFRESH_EXPIRATION_MS: "${JWT_REFRESH_EXPIRATION_MS:-604800000}"
+      REDIS_HOST: "${REDIS_HOST:-redis}"
+      REDIS_PORT: "${REDIS_PORT:-6379}"
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+      MAIL_HOST: "${MAIL_HOST}"
+      MAIL_PORT: "${MAIL_PORT:-587}"
+      MAIL_USERNAME: "${MAIL_USERNAME}"
+      MAIL_PASSWORD: "${MAIL_PASSWORD}"
+      MAIL_SMTP_AUTH: "${MAIL_SMTP_AUTH:-true}"
+      MAIL_SMTP_STARTTLS: "${MAIL_SMTP_STARTTLS:-true}"
+      CLOUDFLARE_R2_ACCESS_KEY_ID: "${CLOUDFLARE_R2_ACCESS_KEY_ID}"
+      CLOUDFLARE_R2_SECRET_ACCESS_KEY: "${CLOUDFLARE_R2_SECRET_ACCESS_KEY}"
+      CLOUDFLARE_R2_ENDPOINT: "${CLOUDFLARE_R2_ENDPOINT}"
+      CLOUDFLARE_R2_BUCKET_NAME: "${CLOUDFLARE_R2_BUCKET_NAME}"
+      FIREBASE_PROJECT_ID: "${FIREBASE_PROJECT_ID}"
+      FIREBASE_PRIVATE_KEY: "${FIREBASE_PRIVATE_KEY}"
+      FIREBASE_CLIENT_EMAIL: "${FIREBASE_CLIENT_EMAIL}"
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID}"
+      GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET}"
+      APP_BASE_URL: "${APP_BASE_URL}"
+      FRONTEND_URL: "${FRONTEND_URL}"
+      LOGGING_LEVEL_ROOT: "${LOGGING_LEVEL:-INFO}"
+      LOGGING_LEVEL_COM_LOFI: "${LOGGING_LEVEL_APP:-INFO}"
+    depends_on:
+      redis:
+        condition: "service_started"
+      sqlserver:
+        condition: "service_healthy"
+    restart: "unless-stopped"
+    networks:
+    - "lofi-network"
+    healthcheck:
+      test:
+      - "CMD"
+      - "curl"
+      - "-f"
+      - "http://localhost:8080/actuator/health"
+      interval: "30s"
+      timeout: "10s"
+      retries: 3
+      start_period: "60s"
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: "2G"
+        reservations:
+          cpus: "1"
+          memory: "1G"
+  redis:
+    image: "redis:7-alpine"
+    container_name: "lofi-redis-prod"
+    ports:
+    - "${REDIS_PORT:-6379}:6379"
+    command: "redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru\
+      \ --requirepass \"${REDIS_PASSWORD:-}\"\n"
+    volumes:
+    - "redis_data:/data"
+    restart: "unless-stopped"
+    networks:
+    - "lofi-network"
+    healthcheck:
+      test:
+      - "CMD"
+      - "redis-cli"
+      - "ping"
+      interval: "10s"
+      timeout: "3s"
+      retries: 3
+  sqlserver:
+    image: "mcr.microsoft.com/mssql/server:2022-latest"
+    platform: "linux/amd64"
+    container_name: "lofi-sqlserver-prod"
+    ports:
+    - "${DB_PORT:-1433}:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${DB_PASSWORD}"
+      MSSQL_PID: "Express"
+      MSSQL_AGENT_ENABLED: "true"
+    volumes:
+    - "sqlserver_data:/var/opt/mssql"
+    - "./init-scripts:/docker-entrypoint-initdb.d:ro"
+    restart: "unless-stopped"
+    networks:
+    - "lofi-network"
+    healthcheck:
+      test:
+      - "CMD"
+      - "/opt/mssql-tools/bin/sqlcmd"
+      - "-S"
+      - "localhost"
+      - "-U"
+      - "sa"
+      - "-P"
+      - "${DB_PASSWORD}"
+      - "-Q"
+      - "SELECT 1"
+      interval: "10s"
+      timeout: "3s"
+      retries: 10
+      start_period: "30s"
+  nginx:
+    image: "nginx:alpine"
+    container_name: "lofi-nginx-prod"
+    ports:
+    - "80:80"
+    - "443:443"
+    volumes:
+    - "./nginx/nginx.conf:/etc/nginx/nginx.conf:ro"
+    - "./nginx/conf.d:/etc/nginx/conf.d:ro"
+    - "./nginx/ssl:/etc/nginx/ssl:ro"
+    - "nginx_logs:/var/log/nginx"
+    depends_on:
+    - "app"
+    restart: "unless-stopped"
+    networks:
+    - "lofi-network"
+volumes:
+  redis_data:
+    driver: "local"
+  sqlserver_data:
+    driver: "local"
+  nginx_logs:
+    driver: "local"
+networks:
+  lofi-network:
+    driver: "bridge"

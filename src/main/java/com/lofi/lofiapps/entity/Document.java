@@ -30,4 +30,17 @@ public class Document extends BaseEntity {
 
   @Column(nullable = false)
   private UUID uploadedBy;
+
+  @Column(name = "content_type")
+  private String contentType;
+
+  @Column(name = "file_size")
+  private Long fileSize;
+
+  @Column(name = "verified")
+  @Builder.Default
+  private Boolean verified = false;
+
+  @Column(name = "verification_notes", columnDefinition = "TEXT")
+  private String verificationNotes;
 }

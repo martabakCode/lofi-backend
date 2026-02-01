@@ -21,6 +21,7 @@ public class UserPrincipal implements UserDetails {
   private UUID branchId;
   private String branchName;
   private java.math.BigDecimal plafond;
+  private com.lofi.lofiapps.enums.UserStatus status;
   private Collection<? extends GrantedAuthority> authorities;
 
   public static UserPrincipal create(User user) {
@@ -50,6 +51,7 @@ public class UserPrincipal implements UserDetails {
         user.getProduct() != null
             ? user.getProduct().getMaxLoanAmount()
             : java.math.BigDecimal.ZERO,
+        user.getStatus(),
         authorities);
   }
 
@@ -89,7 +91,7 @@ public class UserPrincipal implements UserDetails {
 
   @Override
   public boolean isAccountNonLocked() {
-    return true;
+    return status != com.lofi.lofiapps.enums.UserStatus.BLOCKED;
   }
 
   @Override
@@ -99,6 +101,6 @@ public class UserPrincipal implements UserDetails {
 
   @Override
   public boolean isEnabled() {
-    return true;
+    return status == com.lofi.lofiapps.enums.UserStatus.ACTIVE;
   }
 }

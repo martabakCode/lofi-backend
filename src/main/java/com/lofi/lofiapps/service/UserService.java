@@ -18,7 +18,11 @@ public interface UserService {
   PagedResponse<UserSummaryResponse> getUsers(
       com.lofi.lofiapps.dto.request.UserCriteria criteria, Pageable pageable);
 
-  UserProfileResponse updateProfile(UpdateProfileRequest request);
+  UserProfileResponse updateProfile(UpdateProfileRequest request, String userAgent);
+
+  UserProfileResponse updateProfilePicture(org.springframework.web.multipart.MultipartFile photo);
+
+  byte[] getProfilePhoto(UUID userId);
 
   // AI / Analysis
   EligibilityAnalysisResponse analyzeEligibility(UUID userId);

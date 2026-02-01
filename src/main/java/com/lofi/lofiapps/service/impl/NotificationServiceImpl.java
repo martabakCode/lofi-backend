@@ -77,14 +77,20 @@ public class NotificationServiceImpl implements NotificationService {
   @Override
   @Transactional
   public void sendInAppNotification(
-      UUID userId, String title, String message, String type, String link) {
+      UUID userId,
+      String title,
+      String body,
+      com.lofi.lofiapps.enums.NotificationType type,
+      UUID referenceId,
+      String link) {
     try {
       Notification notification =
           Notification.builder()
               .userId(userId)
               .title(title)
-              .message(message)
+              .body(body)
               .type(type)
+              .referenceId(referenceId)
               .link(link)
               .isRead(false)
               .build();
@@ -130,7 +136,13 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     // 1. In-App Notification
-    sendInAppNotification(userId, title, message, "LOAN_STATUS", null);
+    sendInAppNotification(
+        userId,
+        title,
+        message,
+        com.lofi.lofiapps.enums.NotificationType.LOAN,
+        null,
+        null); // TODO: Pass Loan ID if available
 
     // 2. Push Notification
     if (user.getFirebaseToken() != null && !user.getFirebaseToken().isEmpty()) {
@@ -159,5 +171,35 @@ public class NotificationServiceImpl implements NotificationService {
         "Your password has been successfully reset. You can now login with your new password.";
 
     sendEmail(email, subject, body);
+  }
+
+  @Override
+  public java.util.List<com.lofi.lofiapps.dto.response.NotificationResponse> getNotifications(
+      UUID userId) {
+    return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+        .map(
+            notification ->
+                com.lofi.lofiapps.dto.response.NotificationResponse.builder()
+                    .id(notification.getId())
+                    .userId(notification.getUserId())
+                    .title(notification.getTitle())
+                    .body(notification.getBody())
+                    .type(notification.getType())
+                    .referenceId(notification.getReferenceId())
+                    .isRead(notification.getIsRead())
+                    .createdAt(notification.getCreatedAt())
+                    .link(notification.getLink())
+                    .build())
+        .collect(java.util.stream.Collectors.toList());
+  }
+
+  @Override
+  @Transactional
+  public void markAsRead(UUID id) {
+    Notification notification = notificationRepository.findById(id).orElse(null);
+    if (notification != null) {
+      notification.setIsRead(true);
+      notificationRepository.save(notification);
+    }
   }
 }

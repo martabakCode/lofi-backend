@@ -38,4 +38,11 @@ public class PagedResponse<T> {
                 .build())
         .build();
   }
+
+  public static <T> PagedResponse<T> empty() {
+    return PagedResponse.<T>builder()
+        .items(List.of())
+        .meta(Meta.builder().page(0).size(0).totalItems(0).totalPages(0).build())
+        .build();
+  }
 }

@@ -77,16 +77,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         SecurityContextHolder.getContext().setAuthentication(authentication);
       }
     } catch (Exception e) {
-      log.error("Cannot set user authentication: {}", e);
-      // If an error occurs during authentication (e.g., Redis down, DB down),
-      // we should probably let the user know instead of a generic 401.
-      // However, we must be careful not to leak too much info.
-      // But for "Unauthorized" vs "Server Error", this distinction is important.
-      if (!response.isCommitted()) {
-        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-        response.getWriter().write("Authentication service error: " + e.getMessage());
-      }
-      return; // Stop filter chain
+      log.error("Cannot set user authentication: {}", e.getMessage());
     }
 
     filterChain.doFilter(request, response);

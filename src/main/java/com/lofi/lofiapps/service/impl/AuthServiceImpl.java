@@ -9,6 +9,7 @@ import com.lofi.lofiapps.service.impl.usecase.auth.GoogleLoginUseCase;
 import com.lofi.lofiapps.service.impl.usecase.auth.LoginUseCase;
 import com.lofi.lofiapps.service.impl.usecase.auth.LogoutUseCase;
 import com.lofi.lofiapps.service.impl.usecase.auth.RefreshTokenUseCase;
+import com.lofi.lofiapps.service.impl.usecase.auth.RegisterUseCase;
 import com.lofi.lofiapps.service.impl.usecase.auth.ResetPasswordUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class AuthServiceImpl implements AuthService {
   private final ResetPasswordUseCase resetPasswordUseCase;
   private final ChangePasswordUseCase changePasswordUseCase;
   private final RefreshTokenUseCase refreshTokenUseCase;
+  private final RegisterUseCase registerUseCase;
 
   @Override
   @Transactional
@@ -66,5 +68,11 @@ public class AuthServiceImpl implements AuthService {
   @Transactional
   public void changePassword(ChangePasswordRequest request) {
     changePasswordUseCase.execute(request);
+  }
+
+  @Override
+  @Transactional
+  public LoginResponse register(RegisterRequest request) {
+    return registerUseCase.execute(request);
   }
 }

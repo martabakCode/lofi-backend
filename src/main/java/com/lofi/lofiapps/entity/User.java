@@ -39,8 +39,7 @@ public class User extends BaseEntity {
   @Column(unique = true, nullable = false)
   private String email;
 
-  @NotBlank(message = "Password is required")
-  @Column(nullable = false)
+  @Column(nullable = true)
   private String password;
 
   @Column(nullable = true)
@@ -51,6 +50,9 @@ public class User extends BaseEntity {
 
   @Column(nullable = true)
   private String firebaseToken;
+
+  @Column(name = "firebase_uid", nullable = true, unique = true)
+  private String firebaseUid;
 
   @Enumerated(EnumType.STRING)
   private UserStatus status;
@@ -79,4 +81,11 @@ public class User extends BaseEntity {
       inverseJoinColumns = @JoinColumn(name = "role_id"))
   @Builder.Default
   private Set<Role> roles = new HashSet<>();
+
+  // Location coordinates (nullable)
+  @Column(precision = 10, scale = 8)
+  private java.math.BigDecimal longitude;
+
+  @Column(precision = 10, scale = 8)
+  private java.math.BigDecimal latitude;
 }

@@ -11,6 +11,7 @@ import com.lofi.lofiapps.security.service.UserPrincipal;
 import com.lofi.lofiapps.service.UserService;
 import com.lofi.lofiapps.service.impl.usecase.user.CreateUserUseCase;
 import com.lofi.lofiapps.service.impl.usecase.user.DeleteUserUseCase;
+import com.lofi.lofiapps.service.impl.usecase.user.GetProfilePhotoUseCase;
 import com.lofi.lofiapps.service.impl.usecase.user.GetUserProfileUseCase;
 import com.lofi.lofiapps.service.impl.usecase.user.GetUsersUseCase;
 import com.lofi.lofiapps.service.impl.usecase.user.UpdateProfileUseCase;
@@ -31,6 +32,9 @@ public class UserServiceImpl implements UserService {
   private final GetUserProfileUseCase getUserProfileUseCase;
   private final GetUsersUseCase getUsersUseCase;
   private final UpdateProfileUseCase updateProfileUseCase;
+  private final GetProfilePhotoUseCase getProfilePhotoUseCase;
+  private final com.lofi.lofiapps.service.impl.usecase.user.UpdateProfilePictureUseCase
+      updateProfilePictureUseCase;
 
   @Override
   public UserSummaryResponse createUser(CreateUserRequest request) {
@@ -64,14 +68,31 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public UserProfileResponse updateProfile(UpdateProfileRequest request) {
+  public UserProfileResponse updateProfile(UpdateProfileRequest request, String userAgent) {
     Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     if (!(principal instanceof UserPrincipal)) {
       throw new RuntimeException("Unauthenticated");
     }
 
     UUID userId = ((UserPrincipal) principal).getId();
-    return updateProfileUseCase.execute(userId, request);
+    return updateProfileUseCase.execute(userId, request, userAgent);
+  }
+
+  @Override
+  public UserProfileResponse updateProfilePicture(
+      org.springframework.web.multipart.MultipartFile photo) {
+    Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    if (!(principal instanceof UserPrincipal)) {
+      throw new RuntimeException("Unauthenticated");
+    }
+
+    UUID userId = ((UserPrincipal) principal).getId();
+    return updateProfilePictureUseCase.execute(userId, photo);
+  }
+
+  @Override
+  public byte[] getProfilePhoto(UUID userId) {
+    return getProfilePhotoUseCase.execute(userId);
   }
 
   @Override

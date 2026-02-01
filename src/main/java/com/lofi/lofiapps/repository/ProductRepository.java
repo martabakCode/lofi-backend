@@ -16,4 +16,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
   List<Product> findByIsActiveTrue();
 
   Page<Product> findByIsActive(Boolean isActive, Pageable pageable);
+
+  Optional<Product> findTopByIsActiveTrueOrderByMinLoanAmountAsc();
 }

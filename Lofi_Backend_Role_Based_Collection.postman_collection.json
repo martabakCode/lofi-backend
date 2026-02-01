@@ -112,10 +112,16 @@
                     "name": "Update Profile",
                     "request": {
                         "method": "PUT",
-                        "header": [],
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"fullName\": \"Updated Name\",\n    \"phoneNumber\": \"08123456789\"\n}",
+                            "raw": "{\n    \"fullName\": \"Updated Name\",\n    \"phoneNumber\": \"08123456789\",\n    \"incomeSource\": \"Salary\",\n    \"monthlyIncome\": 10000000\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -130,6 +136,54 @@
                             "path": [
                                 "users",
                                 "me"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Profile Photo",
+                    "request": {
+                        "method": "PUT",
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "photo",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/users/me/photo",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "me",
+                                "photo"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Profile Photo",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/users/me/photo",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "me",
+                                "photo"
                             ]
                         }
                     },
@@ -365,13 +419,13 @@
             "description": "First layer reviewer (Submitted -> Reviewed)",
             "item": [
                 {
-                    "name": "Review Loan (Approve/Pass to Manager)",
+                    "name": "Apply on Behalf of Customer",
                     "request": {
                         "method": "POST",
                         "header": [],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"notes\": \"Documents are complete and verified\"\n}",
+                            "raw": "{\n    \"fullName\": \"New Customer\",\n    \"email\": \"customer@example.com\",\n    \"username\": \"customer123\",\n    \"phoneNumber\": \"081234567890\",\n    \"branchId\": \"{{branch_id_uuid}}\",\n    \"incomeSource\": \"Salary\",\n    \"incomeType\": \"Fixed\",\n    \"monthlyIncome\": 15000000,\n    \"age\": 30,\n    \"nik\": \"1234567890123456\",\n    \"dateOfBirth\": \"1994-01-27\",\n    \"placeOfBirth\": \"Jakarta\",\n    \"city\": \"Jakarta\",\n    \"address\": \"Jl. Sudirman No. 1\",\n    \"province\": \"DKI Jakarta\",\n    \"district\": \"Tanah Abang\",\n    \"subDistrict\": \"Gelora\",\n    \"postalCode\": \"10270\",\n    \"gender\": \"MALE\",\n    \"maritalStatus\": \"SINGLE\",\n    \"education\": \"BACHELOR\",\n    \"occupation\": \"Software Engineer\",\n    \"productId\": \"{{product_id_uuid}}\",\n    \"loanAmount\": 50000000,\n    \"tenor\": 24\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -379,20 +433,14 @@
                             }
                         },
                         "url": {
-                            "raw": "{{base_url}}/loans/:id/review",
+                            "raw": "{{base_url}}/loans/marketing/apply-on-behalf",
                             "host": [
                                 "{{base_url}}"
                             ],
                             "path": [
                                 "loans",
-                                ":id",
-                                "review"
-                            ],
-                            "variable": [
-                                {
-                                    "key": "id",
-                                    "value": "{{current_loan_id}}"
-                                }
+                                "marketing",
+                                "apply-on-behalf"
                             ]
                         }
                     },

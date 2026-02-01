@@ -21,6 +21,22 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * DataInitializer - Minimal data initialization for ALL environments.
+ *
+ * <p>This seeder runs in all profiles (dev, prod, test) and creates only the essential data
+ * required for the application to function:
+ *
+ * <ul>
+ *   <li>All RoleName enum values as Role entities
+ *   <li>One default branch (Headquarters)
+ *   <li>One default product (KTA-001)
+ *   <li>One Super Admin user (admin@lofi.test)
+ * </ul>
+ *
+ * <p>For development-specific test data (multiple users, loans, etc.), see {@link
+ * DevelopmentDataSeeder} which only runs in 'dev' profile.
+ */
 @Configuration
 @RequiredArgsConstructor
 @Slf4j
@@ -32,22 +48,26 @@ public class DataInitializer {
   private final ProductRepository productRepository;
   private final PasswordEncoder passwordEncoder;
 
+  /**
+   * Initializes minimal required data for all environments. Runs in all profiles to ensure basic
+   * roles, admin user, branch and product exist.
+   */
   @Bean
   @Transactional
   public CommandLineRunner initData() {
     return args -> {
-      log.info("Starting Data Initialization...");
+      log.info("Starting Data Initialization (applies to all profiles)...");
 
-      // 1. Roles
+      // 1. Roles - idempotent, creates only missing roles
       initRoles();
 
-      // 2. Branch
+      // 2. Branch - idempotent, creates only if no branches exist
       Branch branch = initBranch();
 
-      // 3. Product
+      // 3. Product - idempotent, creates only if no products exist
       initProduct();
 
-      // 4. Admin User
+      // 4. Admin User - idempotent, creates only if admin doesn't exist
       initAdminUser(branch);
 
       log.info("Data Initialization Completed.");
@@ -101,15 +121,17 @@ public class DataInitializer {
 
   private void initAdminUser(Branch branch) {
     String email = "admin@lofi.test";
-    if (!userRepository.existsByEmail(email) && !userRepository.existsByUsername("admin")) {
+    String username = "admin";
+
+    if (!userRepository.existsByEmail(email) && !userRepository.existsByUsername(username)) {
       Role adminRole =
           roleRepository
               .findByName(RoleName.ROLE_SUPER_ADMIN)
-              .orElseThrow(() -> new RuntimeException("Role Admin not found"));
+              .orElseThrow(() -> new RuntimeException("Role ROLE_SUPER_ADMIN not found"));
 
       User admin =
           User.builder()
-              .username("admin")
+              .username(username)
               .email(email)
               .password(passwordEncoder.encode("Password123!"))
               .fullName("Super Admin")
@@ -121,6 +143,8 @@ public class DataInitializer {
 
       userRepository.save(admin);
       log.info("Created Admin User: {}", email);
+    } else {
+      log.debug("Admin user already exists, skipping creation");
     }
   }
 }

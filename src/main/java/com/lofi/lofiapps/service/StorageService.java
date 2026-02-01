@@ -7,4 +7,8 @@ public interface StorageService {
       String bucketName, String objectKey, String contentType, long expirationMinutes);
 
   URL generatePresignedDownloadUrl(String bucketName, String objectKey, long expirationMinutes);
+
+  void uploadFile(String bucketName, String objectKey, byte[] content, String contentType);
+
+  byte[] downloadFile(String bucketName, String objectKey);
 }

@@ -16,5 +16,9 @@ public class PresignUploadRequest {
   @NotNull(message = "Document type is required")
   private DocumentType documentType;
 
+  @NotBlank(message = "Content type is required")
   private String contentType;
+
+  // File size in bytes (optional, for validation)
+  private Long fileSize;
 }

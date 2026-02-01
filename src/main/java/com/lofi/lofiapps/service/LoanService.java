@@ -9,6 +9,9 @@ import org.springframework.data.domain.Pageable;
 public interface LoanService {
   LoanResponse applyLoan(LoanRequest request, UUID userId, String username);
 
+  LoanResponse marketingApplyLoan(
+      com.lofi.lofiapps.dto.request.MarketingApplyLoanRequest request, String marketingUsername);
+
   PagedResponse<LoanResponse> getLoans(LoanCriteria criteria, Pageable pageable);
 
   PagedResponse<LoanResponse> getMyLoans(UUID customerId, Pageable pageable);

@@ -17,4 +17,6 @@ public interface AuthService {
   void resetPassword(ResetPasswordRequest request);
 
   void changePassword(ChangePasswordRequest request);
+
+  LoginResponse register(RegisterRequest request);
 }

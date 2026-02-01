@@ -16,12 +16,35 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * DevelopmentDataSeeder - Extensive test data for DEVELOPMENT environment only.
+ *
+ * <p>This seeder ONLY runs when the 'dev' Spring profile is active. It creates comprehensive test
+ * data including:
+ *
+ * <ul>
+ *   <li>Roles with specific permissions
+ *   <li>Multiple branches
+ *   <li>Various user types (Marketing, Branch Managers, Back Office, Customers)
+ *   <li>Multiple loan products (BASIC, STANDARD, PREMIUM)
+ *   <li>Loans in various statuses (DRAFT, SUBMITTED, REVIEWED, APPROVED, DISBURSED, etc.)
+ *   <li>SLA test scenarios
+ *   <li>Approval history, notifications, documents, and audit logs
+ * </ul>
+ *
+ * <p><strong>WARNING:</strong> This seeder cleans up and recreates transactional data on each run.
+ * It should NEVER be used in production.
+ *
+ * <p>For minimal required data that runs in all environments, see {@link DataInitializer}.
+ */
 @Configuration
 @RequiredArgsConstructor
 @Slf4j
+@Profile("dev") // Only runs in 'dev' profile
 public class DevelopmentDataSeeder {
 
   private final RoleRepository roleRepository;
@@ -36,24 +59,29 @@ public class DevelopmentDataSeeder {
   private final AuditLogRepository auditLogRepository;
   private final PasswordEncoder passwordEncoder;
 
+  /**
+   * Seeds development data. Only executes when 'dev' profile is active. Cleans up existing
+   * transactional data before seeding to ensure fresh test data.
+   */
   @Bean
   @Transactional
   public CommandLineRunner seedDevelopmentData() {
     return args -> {
-      log.info("Starting Development Data Seeding...");
+      log.info("Starting Development Data Seeding (dev profile only)...");
 
+      // Clean up transactional data first to ensure fresh test data
       cleanupTransactionalData();
 
-      // 1. Roles & Permissions
+      // 1. Roles & Permissions - extends DataInitializer with permissions
       initRolesAndPermissions();
 
       // 2. Branch (Prerequisite for Users)
       Branch branch = initBranch();
 
-      // 3. Admin & Users
+      // 3. Admin & Users - creates test users for all roles
       initUsers(branch);
 
-      // 4. Products
+      // 4. Products - creates BASIC, STANDARD, PREMIUM products
       initProducts();
 
       // 5. Loans & History & Notifications (20 Test Cases)
@@ -64,6 +92,12 @@ public class DevelopmentDataSeeder {
       initPendingSlaLoans();
 
       log.info("Development Data Seeding Completed.");
+      log.info("Test Accounts:");
+      log.info("  - Admin: admin@lofi.test / Password123!");
+      log.info("  - Marketing: marketing1@lofi.test / Password123!");
+      log.info("  - Branch Manager: bm1@lofi.test / Password123!");
+      log.info("  - Back Office: bo1@lofi.test / Password123!");
+      log.info("  - Customer: customer1@lofi.test / Password123!");
     };
   }
 
@@ -92,7 +126,6 @@ public class DevelopmentDataSeeder {
     }
 
     // Define Roles and assign permissions
-    // Simplification: Assigning SUBSET of permissions based on role
     // SUPER_ADMIN get all
     createRole(RoleName.ROLE_SUPER_ADMIN, allPermissions);
     createRole(RoleName.ROLE_ADMIN, allPermissions); // Keep legacy admin populated too
@@ -122,58 +155,65 @@ public class DevelopmentDataSeeder {
   }
 
   private void createRole(RoleName roleName, Set<Permission> permissions) {
-    if (roleRepository.findByName(roleName).isEmpty()) {
+    Optional<Role> existingRole = roleRepository.findByName(roleName);
+    if (existingRole.isEmpty()) {
       roleRepository.save(Role.builder().name(roleName).permissions(permissions).build());
-      log.info("Created Role: {}", roleName);
+      log.info("Created Role with permissions: {}", roleName);
     } else {
-      // Update permissions if exists (optional, but good for idemp)
-      Role role = roleRepository.findByName(roleName).get();
+      // Update permissions if role exists but has no permissions
+      Role role = existingRole.get();
       if (role.getPermissions() == null || role.getPermissions().isEmpty()) {
         role.setPermissions(permissions);
         roleRepository.save(role);
+        log.info("Updated Role permissions: {}", roleName);
       }
     }
   }
 
   private Branch initBranch() {
-    if (branchRepository.count() == 0) {
-      Branch branch =
-          Branch.builder()
-              .name("Main Branch")
-              .address("123 Seeder St")
-              .city("Jakarta")
-              .state("DKI")
-              .zipCode("10000")
-              .phone("021-000000")
-              .build();
-      return branchRepository.save(branch);
+    // Use existing branch from DataInitializer if available
+    List<Branch> existingBranches = branchRepository.findAll();
+    if (!existingBranches.isEmpty()) {
+      log.debug("Using existing branch: {}", existingBranches.get(0).getName());
+      return existingBranches.get(0);
     }
-    return branchRepository.findAll().get(0);
+
+    // Create new branch only if none exists
+    Branch branch =
+        Branch.builder()
+            .name("Main Branch")
+            .address("123 Seeder St")
+            .city("Jakarta")
+            .state("DKI")
+            .zipCode("10000")
+            .phone("021-000000")
+            .build();
+    return branchRepository.save(branch);
   }
 
   private void initUsers(Branch branch) {
     String password = passwordEncoder.encode("Password123!");
 
-    // Super Admin
-    createUser(
+    // Super Admin (skip if already created by DataInitializer)
+    createUserIfNotExists(
         "admin@lofi.test", "admin", "Super Admin", RoleName.ROLE_SUPER_ADMIN, branch, password);
 
     // Marketing (3)
-    createUser(
+    createUserIfNotExists(
         "marketing1@lofi.test",
         "marketing1",
         "Marketing One",
         RoleName.ROLE_MARKETING,
         branch,
         password);
-    createUser(
+    createUserIfNotExists(
         "marketing2@lofi.test",
         "marketing2",
         "Marketing Two",
         RoleName.ROLE_MARKETING,
         branch,
         password);
-    createUser(
+    createUserIfNotExists(
         "marketing3@lofi.test",
         "marketing3",
         "Marketing Three",
@@ -182,22 +222,22 @@ public class DevelopmentDataSeeder {
         password);
 
     // Branch Manager (3)
-    createUser(
+    createUserIfNotExists(
         "bm1@lofi.test", "bm1", "Branch Manager 1", RoleName.ROLE_BRANCH_MANAGER, branch, password);
-    createUser(
+    createUserIfNotExists(
         "bm2@lofi.test", "bm2", "Branch Manager 2", RoleName.ROLE_BRANCH_MANAGER, branch, password);
-    createUser(
+    createUserIfNotExists(
         "bm3@lofi.test", "bm3", "Branch Manager 3", RoleName.ROLE_BRANCH_MANAGER, branch, password);
 
     // Back Office (2)
-    createUser(
+    createUserIfNotExists(
         "bo1@lofi.test", "bo1", "Back Office 1", RoleName.ROLE_BACK_OFFICE, branch, password);
-    createUser(
+    createUserIfNotExists(
         "bo2@lofi.test", "bo2", "Back Office 2", RoleName.ROLE_BACK_OFFICE, branch, password);
 
     // Customers (6)
     for (int i = 1; i <= 6; i++) {
-      createUser(
+      createUserIfNotExists(
           "customer" + i + "@lofi.test",
           "customer" + i,
           "Customer " + i,
@@ -207,7 +247,7 @@ public class DevelopmentDataSeeder {
     }
   }
 
-  private void createUser(
+  private void createUserIfNotExists(
       String email,
       String username,
       String fullName,
@@ -215,7 +255,10 @@ public class DevelopmentDataSeeder {
       Branch branch,
       String password) {
     if (!userRepository.existsByEmail(email) && !userRepository.existsByUsername(username)) {
-      Role role = roleRepository.findByName(roleName).orElseThrow();
+      Role role =
+          roleRepository
+              .findByName(roleName)
+              .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
       User user =
           User.builder()
               .username(username)
@@ -229,15 +272,21 @@ public class DevelopmentDataSeeder {
               .build();
       userRepository.save(user);
       log.info("Created User: {}", email);
+    } else {
+      log.debug("User already exists, skipping: {}", email);
     }
   }
 
   private void initProducts() {
+    // Note: DataInitializer may have created KTA-001, we add more products here
     List<String> allowedCodes = List.of("BASIC", "STANDARD", "PREMIUM");
 
-    // Cleanup old products not in the new list
+    // Cleanup old products not in the new list (except KTA-001 from
+    // DataInitializer)
     productRepository.findAll().stream()
-        .filter(p -> !allowedCodes.contains(p.getProductCode()))
+        .filter(
+            p ->
+                !allowedCodes.contains(p.getProductCode()) && !"KTA-001".equals(p.getProductCode()))
         .forEach(
             p -> {
               productRepository.delete(p);
@@ -320,9 +369,6 @@ public class DevelopmentDataSeeder {
   }
 
   private void initLoans() {
-    // if (loanRepository.count() > 0) return; // Removed to force re-seed after
-    // cleanup
-
     Product prod1 = productRepository.findByProductCode("BASIC").orElseThrow();
     Product prod2 = productRepository.findByProductCode("STANDARD").orElseThrow();
 
@@ -373,11 +419,6 @@ public class DevelopmentDataSeeder {
   }
 
   private void initSlaLoans() {
-    // Check if SLA loans exist. We assume if total loans > 20 (base init), we might
-    // have them.
-    // But initLoans checks count > 0.
-    // Let's rely on checking for a specific reference.
-
     User cust = findUser("customer1@lofi.test");
     boolean slaExists =
         loanRepository.findByCustomerId(cust.getId()).stream()
@@ -589,8 +630,9 @@ public class DevelopmentDataSeeder {
         Notification.builder()
             .userId(loan.getCustomer().getId())
             .title("Loan Update: " + loan.getLoanStatus())
-            .message("Your loan has been updated via " + action)
-            .type("LOAN_STATUS")
+            .body("Your loan has been updated via " + action)
+            .type(com.lofi.lofiapps.enums.NotificationType.LOAN)
+            .referenceId(loan.getId())
             .isRead(false)
             .build();
     notificationRepository.save(notif);
@@ -609,7 +651,9 @@ public class DevelopmentDataSeeder {
   }
 
   private User findUser(String email) {
-    return userRepository.findByEmail(email).orElseThrow();
+    return userRepository
+        .findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("User not found: " + email));
   }
 
   private void createDocuments(Loan loan) {
@@ -645,15 +689,20 @@ public class DevelopmentDataSeeder {
 
   private void initPendingSlaLoans() {
     Branch branch = branchRepository.findAll().get(0);
-    createUser(
-        "customer7@lofi.test",
-        "customer7",
-        "Customer 7",
-        RoleName.ROLE_CUSTOMER,
-        branch,
-        passwordEncoder.encode("Password123!"));
 
-    User cust = findUser("customer7@lofi.test");
+    // Create customer7 if not exists
+    String cust7Email = "customer7@lofi.test";
+    if (!userRepository.existsByEmail(cust7Email)) {
+      createUserIfNotExists(
+          cust7Email,
+          "customer7",
+          "Customer 7",
+          RoleName.ROLE_CUSTOMER,
+          branch,
+          passwordEncoder.encode("Password123!"));
+    }
+
+    User cust = findUser(cust7Email);
     Product prod = productRepository.findByProductCode("BASIC").orElseThrow();
 
     // 1. Breached REVIEW (SUBMITTED 2 days ago)
@@ -666,7 +715,7 @@ public class DevelopmentDataSeeder {
                     l.getCustomer().getId().equals(cust.getId())
                         && l.getCurrentStage() == ApprovalStage.MARKETING)
             .max(Comparator.comparing(Loan::getCreatedAt))
-            .orElseThrow();
+            .orElseThrow(() -> new RuntimeException("SLA loan not found"));
 
     // Backdate Loan
     l1.setSubmittedAt(LocalDateTime.now().minusDays(2));

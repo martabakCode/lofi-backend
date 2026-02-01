@@ -12,6 +12,7 @@ import com.lofi.lofiapps.repository.RoleRepository;
 import com.lofi.lofiapps.repository.UserRepository;
 import com.lofi.lofiapps.security.jwt.JwtUtils;
 import com.lofi.lofiapps.security.service.GoogleAuthService;
+import com.lofi.lofiapps.security.service.GoogleUser;
 import com.lofi.lofiapps.security.service.UserPrincipal;
 import jakarta.transaction.Transactional;
 import java.util.Collections;
@@ -33,11 +34,12 @@ public class GoogleLoginUseCase {
 
   @Transactional
   public LoginResponse execute(GoogleLoginRequest request) {
-    String email = googleAuthService.verifyGoogleToken(request.getIdToken());
-    if (email == null) {
+    GoogleUser googleUser = googleAuthService.verifyGoogleToken(request.getIdToken());
+    if (googleUser == null || googleUser.getEmail() == null) {
       throw new IllegalArgumentException("Invalid Google Token");
     }
 
+    String email = googleUser.getEmail();
     User user = userRepository.findByEmail(email).orElse(null);
 
     if (user == null) {
@@ -56,8 +58,10 @@ public class GoogleLoginUseCase {
           User.builder()
               .email(email)
               .username(email)
-              .fullName("Google User")
-              .password("") // No password for Google users
+              .fullName(googleUser.getName() != null ? googleUser.getName() : "Google User")
+              .profilePictureUrl(googleUser.getPicture())
+              .password(null) // No password for Google users
+              .firebaseUid(googleUser.getUid()) // Store the 'sub' identifier
               .status(UserStatus.ACTIVE)
               .roles(Collections.singleton(customerRole))
               .branch(nearestBranch)
@@ -65,9 +69,22 @@ public class GoogleLoginUseCase {
               .build();
 
       user = userRepository.save(user);
+    } else if (user.getFirebaseUid() == null) {
+      // Link firebaseUid to existing user if not already linked
+      user.setFirebaseUid(googleUser.getUid());
+      user = userRepository.save(user);
+    }
+
+    // Check user status before login
+    if (user.getStatus() == UserStatus.INACTIVE) {
+      throw new RuntimeException("User account is inactive. Please contact support.");
+    }
+    if (user.getStatus() == UserStatus.BLOCKED) {
+      throw new RuntimeException("User account is blocked. Please contact support.");
     }
 
     UserPrincipal userPrincipal = UserPrincipal.create(user);
+
     Authentication authentication =
         new UsernamePasswordAuthenticationToken(
             userPrincipal, null, userPrincipal.getAuthorities());

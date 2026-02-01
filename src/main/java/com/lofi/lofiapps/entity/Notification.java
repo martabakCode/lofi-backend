@@ -30,9 +30,13 @@ public class Notification extends BaseEntity {
 
   @NotBlank
   @Column(nullable = false, columnDefinition = "TEXT")
-  private String message;
+  private String body;
 
-  private String type;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private com.lofi.lofiapps.enums.NotificationType type;
+
+  private UUID referenceId;
 
   @Column(nullable = false)
   @Builder.Default

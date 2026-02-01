@@ -63,4 +63,10 @@ public class FirebaseConfig {
   public FirebaseMessaging firebaseMessaging(FirebaseApp firebaseApp) {
     return FirebaseMessaging.getInstance(firebaseApp);
   }
+
+  @Bean
+  @Primary
+  public com.google.firebase.auth.FirebaseAuth firebaseAuth(FirebaseApp firebaseApp) {
+    return com.google.firebase.auth.FirebaseAuth.getInstance(firebaseApp);
+  }
 }

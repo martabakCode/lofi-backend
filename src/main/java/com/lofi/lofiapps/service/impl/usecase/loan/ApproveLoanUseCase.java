@@ -59,8 +59,24 @@ public class ApproveLoanUseCase {
           "Loan (ID: " + loanId + ") does not have a customer assigned.");
     }
     UUID customerId = loan.getCustomer().getId();
+    User customer = loan.getCustomer();
+
+    // Validate available plafond before approving
+    if (customer.getProduct() != null) {
+      java.math.BigDecimal availablePlafond = calculateAvailablePlafond(customer);
+      if (loan.getLoanAmount().compareTo(availablePlafond) > 0) {
+        throw new IllegalStateException(
+            "Cannot approve loan: Loan amount ("
+                + loan.getLoanAmount()
+                + ") exceeds available plafond ("
+                + availablePlafond
+                + ")");
+      }
+    }
+
     boolean hasApprovedLoan =
         loanRepository.findByCustomerId(customerId).stream()
+            .filter(l -> !l.getId().equals(loanId)) // Exclude current loan
             .anyMatch(
                 l ->
                     l.getLoanStatus() == LoanStatus.APPROVED
@@ -127,5 +143,38 @@ public class ApproveLoanUseCase {
                     l.getCustomer().getId(), LoanStatus.CANCELLED);
               }
             });
+  }
+
+  /**
+   * Calculates the available plafond (remaining credit limit) for a user. Formula: Product
+   * maxLoanAmount - Sum of all APPROVED/DISBURSED/COMPLETED loans (excluding the current loan being
+   * processed)
+   */
+  private java.math.BigDecimal calculateAvailablePlafond(User customer) {
+    if (customer.getProduct() == null) {
+      return java.math.BigDecimal.ZERO;
+    }
+
+    java.math.BigDecimal maxPlafond = customer.getProduct().getMaxLoanAmount();
+
+    // Calculate total of active/approved loans
+    java.math.BigDecimal usedPlafond =
+        loanRepository.findByCustomerId(customer.getId()).stream()
+            .filter(
+                loan ->
+                    loan.getLoanStatus() == LoanStatus.APPROVED
+                        || loan.getLoanStatus() == LoanStatus.DISBURSED
+                        || loan.getLoanStatus() == LoanStatus.COMPLETED)
+            .map(
+                loan ->
+                    loan.getLoanAmount() != null ? loan.getLoanAmount() : java.math.BigDecimal.ZERO)
+            .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+    java.math.BigDecimal availablePlafond = maxPlafond.subtract(usedPlafond);
+
+    // Ensure not negative
+    return availablePlafond.compareTo(java.math.BigDecimal.ZERO) > 0
+        ? availablePlafond
+        : java.math.BigDecimal.ZERO;
   }
 }

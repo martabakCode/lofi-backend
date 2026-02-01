@@ -12,5 +12,14 @@ public interface ProductService {
 
   PagedResponse<ProductResponse> getProducts(Boolean isActive, Pageable pageable);
 
+  ProductResponse getProductById(UUID id);
+
+  ProductResponse updateProduct(
+      UUID id, com.lofi.lofiapps.dto.request.UpdateProductRequest request);
+
+  void deleteProduct(UUID id);
+
   ProductRecommendationResponse recommendProduct(UUID userId);
+
+  ProductResponse getAssignedProduct(UUID userId);
 }

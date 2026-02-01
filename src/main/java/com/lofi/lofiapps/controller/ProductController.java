@@ -8,6 +8,7 @@ import com.lofi.lofiapps.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -57,5 +58,46 @@ public class ProductController {
     // TODO: Add permission check if userId != principal.id
 
     return ResponseEntity.ok(ApiResponse.success(productService.recommendProduct(targetUserId)));
+  }
+
+  @GetMapping("/me")
+  @PreAuthorize("hasRole('CUSTOMER')")
+  @Operation(summary = "Get the product assigned to the logged-in customer")
+  public ResponseEntity<ApiResponse<ProductResponse>> getAssignedProduct(
+      @org.springframework.security.core.annotation.AuthenticationPrincipal
+          com.lofi.lofiapps.security.service.UserPrincipal userPrincipal) {
+
+    if (userPrincipal == null) {
+      throw new IllegalArgumentException("User is not authenticated");
+    }
+
+    return ResponseEntity.ok(
+        ApiResponse.success(productService.getAssignedProduct(userPrincipal.getId())));
+  }
+
+  @GetMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+  @Operation(summary = "Get product by ID")
+  public ResponseEntity<ApiResponse<ProductResponse>> getProductById(@PathVariable UUID id) {
+    return ResponseEntity.ok(ApiResponse.success(productService.getProductById(id)));
+  }
+
+  @PutMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+  @Operation(summary = "Update a product")
+  public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(
+      @PathVariable UUID id,
+      @Valid @RequestBody com.lofi.lofiapps.dto.request.UpdateProductRequest request) {
+    return ResponseEntity.ok(
+        ApiResponse.success(
+            productService.updateProduct(id, request), "Product updated successfully"));
+  }
+
+  @DeleteMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+  @Operation(summary = "Delete a product")
+  public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable UUID id) {
+    productService.deleteProduct(id);
+    return ResponseEntity.ok(ApiResponse.success(null, "Product deleted successfully"));
   }
 }

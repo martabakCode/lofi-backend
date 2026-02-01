@@ -66,6 +66,6 @@ public abstract class BaseEntity {
   @PreUpdate
   public void preUpdate() {
     this.updatedAt = LocalDateTime.now();
-    this.lastModifiedBy = "System";
+    if (this.lastModifiedBy == null) this.lastModifiedBy = "System";
   }
 }

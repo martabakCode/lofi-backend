@@ -20,9 +20,18 @@ public class AuditLog extends BaseEntity {
   @Column(nullable = false)
   private String action;
 
-  private String resourceType;
-  private String resourceId;
+  private String entityType;
+  private UUID entityId;
 
   @Column(columnDefinition = "TEXT")
-  private String details;
+  private String oldValue;
+
+  @Column(columnDefinition = "TEXT")
+  private String newValue;
+
+  private String ipAddress;
+  private String userAgent;
+
+  @Column(columnDefinition = "TEXT")
+  private String description;
 }

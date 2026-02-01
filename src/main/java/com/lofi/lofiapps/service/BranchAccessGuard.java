@@ -8,23 +8,36 @@ import org.springframework.stereotype.Service;
 @Service
 public class BranchAccessGuard {
   public void validate(User user, Loan loan) {
-    // Skip for Back Office (Global access?)
+    // Skip for Super Admin and Admin (Global access with audit)
+    boolean isGlobalAdmin =
+        user.getRoles().stream()
+            .anyMatch(
+                r ->
+                    r.getName() == RoleName.ROLE_SUPER_ADMIN || r.getName() == RoleName.ROLE_ADMIN);
+    if (isGlobalAdmin) return;
+
+    // Skip for Back Office (Global access but should be logged)
     boolean isBackOffice =
         user.getRoles().stream().anyMatch(r -> r.getName() == RoleName.ROLE_BACK_OFFICE);
     if (isBackOffice) return;
 
     // Check branch
     if (user.getBranch() == null) {
-      // If user has no branch (except BackOffice), deny
+      // If user has no branch (except BackOffice/Admin), deny
       throw new SecurityException("USER_NOT_IN_BRANCH");
     }
 
     if (loan.getBranch() == null) {
-      // If loan not assigned branch yet (e.g. Draft), check if user matches user
-      // branch?
-      // Or if loan belongs to customer, check customer branch
-      // For now, allow? Or strict?
-      return;
+      // If loan not assigned branch yet, only allow if user is the loan owner
+      // (customer)
+      // or if user has explicit permission to work with unassigned loans
+      if (loan.getCustomer() != null && loan.getCustomer().getId().equals(user.getId())) {
+        // Customer accessing their own loan - allow
+        return;
+      }
+      // For other users, deny access to unassigned loans
+      throw new SecurityException(
+          "BRANCH_ACCESS_DENIED: Cannot access loan without branch assignment.");
     }
 
     if (!user.getBranch().getId().equals(loan.getBranch().getId())) {

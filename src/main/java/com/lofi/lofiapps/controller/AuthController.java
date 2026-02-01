@@ -8,10 +8,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -23,14 +25,22 @@ public class AuthController {
   @Operation(summary = "Login with email and password")
   public ResponseEntity<ApiResponse<LoginResponse>> login(
       @Valid @RequestBody LoginRequest request) {
-    System.out.println("Login attempt for email: " + request.getEmail());
+    log.info("Login attempt for email: {}", request.getEmail());
     return ResponseEntity.ok(ApiResponse.success(authService.login(request), "Login success"));
+  }
+
+  @PostMapping("/register")
+  @Operation(summary = "Register a new customer")
+  public ResponseEntity<ApiResponse<LoginResponse>> register(
+      @Valid @RequestBody RegisterRequest request) {
+    return ResponseEntity.ok(
+        ApiResponse.success(authService.register(request), "Registration successful"));
   }
 
   @PostMapping("/google")
   @Operation(summary = "Login with Google ID Token")
   public ResponseEntity<ApiResponse<LoginResponse>> googleLogin(
-      @Valid @RequestBody com.lofi.lofiapps.dto.request.GoogleLoginRequest request) {
+      @Valid @RequestBody GoogleLoginRequest request) {
     return ResponseEntity.ok(
         ApiResponse.success(authService.googleLogin(request), "Login success"));
   }

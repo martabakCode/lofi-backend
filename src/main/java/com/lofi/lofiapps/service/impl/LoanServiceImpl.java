@@ -46,6 +46,8 @@ public class LoanServiceImpl implements LoanService {
   private final RollbackLoanUseCase rollbackLoanUseCase;
   private final SubmitLoanUseCase submitLoanUseCase;
   private final CompleteLoanUseCase completeLoanUseCase;
+  private final com.lofi.lofiapps.service.impl.usecase.loan.MarketingApplyLoanUseCase
+      marketingApplyLoanUseCase;
 
   // AI / Analysis UseCases
   private final AnalyzeLoanUseCase analyzeLoanUseCase;
@@ -56,6 +58,12 @@ public class LoanServiceImpl implements LoanService {
   @Override
   public LoanResponse applyLoan(LoanRequest request, UUID userId, String username) {
     return applyLoanUseCase.execute(request, userId, username);
+  }
+
+  @Override
+  public LoanResponse marketingApplyLoan(
+      com.lofi.lofiapps.dto.request.MarketingApplyLoanRequest request, String marketingUsername) {
+    return marketingApplyLoanUseCase.execute(request, marketingUsername);
   }
 
   @Override

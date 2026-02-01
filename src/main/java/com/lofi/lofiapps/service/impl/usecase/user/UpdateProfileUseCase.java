@@ -6,6 +6,7 @@ import com.lofi.lofiapps.entity.User;
 import com.lofi.lofiapps.entity.UserBiodata;
 import com.lofi.lofiapps.exception.ResourceNotFoundException;
 import com.lofi.lofiapps.repository.UserRepository;
+import com.lofi.lofiapps.service.StorageService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -17,9 +18,16 @@ public class UpdateProfileUseCase {
 
   private final UserRepository userRepository;
   private final GetUserProfileUseCase getUserProfileUseCase;
+  private final StorageService storageService;
+  private final com.lofi.lofiapps.repository.UserBiodataRepository userBiodataRepository;
+  private final com.lofi.lofiapps.repository.ProductRepository productRepository;
+
+  @org.springframework.beans.factory.annotation.Value("${app.storage.bucket-name:lofi-bucket}")
+  private String bucketName;
 
   @Transactional
-  public UserProfileResponse execute(UUID userId, UpdateProfileRequest request) {
+  public UserProfileResponse execute(UUID userId, UpdateProfileRequest request, String userAgent) {
+    String currentUserId = userId.toString();
     User user =
         userRepository
             .findById(userId)
@@ -27,19 +35,24 @@ public class UpdateProfileUseCase {
 
     user.setFullName(request.getFullName());
     user.setPhoneNumber(request.getPhoneNumber());
-    user.setProfilePictureUrl(request.getProfilePictureUrl());
 
-    // Update Biodata
     UserBiodata biodata = user.getUserBiodata();
     if (biodata == null) {
-      biodata = new UserBiodata();
-      user.setUserBiodata(biodata);
+      java.util.Optional<UserBiodata> existingBiodata = userBiodataRepository.findByUser(user);
+      if (existingBiodata.isPresent()) {
+        biodata = existingBiodata.get();
+        user.setUserBiodata(biodata);
+      } else {
+        biodata = new UserBiodata();
+        biodata.setUser(user);
+        biodata.setCreatedBy(currentUserId);
+        user.setUserBiodata(biodata);
+      }
     }
 
     biodata.setIncomeSource(request.getIncomeSource());
     biodata.setIncomeType(request.getIncomeType());
     biodata.setMonthlyIncome(request.getMonthlyIncome());
-    biodata.setAge(request.getAge() != null ? request.getAge() : 0);
     biodata.setNik(request.getNik());
     biodata.setDateOfBirth(request.getDateOfBirth());
     biodata.setPlaceOfBirth(request.getPlaceOfBirth());
@@ -51,10 +64,21 @@ public class UpdateProfileUseCase {
     biodata.setPostalCode(request.getPostalCode());
     biodata.setGender(request.getGender());
     biodata.setMaritalStatus(request.getMaritalStatus());
-    biodata.setEducation(request.getEducation());
     biodata.setOccupation(request.getOccupation());
 
+    // Update user location coordinates (nullable)
+    user.setLongitude(request.getLongitude());
+    user.setLatitude(request.getLatitude());
+
     user.setProfileCompleted(true);
+
+    if (user.getProduct() == null) {
+      productRepository.findTopByIsActiveTrueOrderByMinLoanAmountAsc().ifPresent(user::setProduct);
+    }
+
+    user.setLastModifiedBy(currentUserId + (userAgent != null ? " (" + userAgent + ")" : ""));
+    biodata.setLastModifiedBy(currentUserId + (userAgent != null ? " (" + userAgent + ")" : ""));
+
     user = userRepository.save(user);
 
     return getUserProfileUseCase.mapToProfileResponse(user);
