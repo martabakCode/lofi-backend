@@ -146,4 +146,11 @@ public class MarketingApplyLoanRequest {
       description = "Account holder name",
       example = "John Doe")
   private String accountHolderName;
+
+  /**
+   * Optional PIN for customer validation. If provided, PIN will be validated before loan
+   * submission.
+   */
+  @jakarta.validation.constraints.Pattern(regexp = "^\\d{4,6}$", message = "PIN must be 4-6 digits")
+  private String pin;
 }

@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthServiceImpl implements AuthService {
 
   private final LoginUseCase loginUseCase;
+  private final com.lofi.lofiapps.service.impl.usecase.auth.PinLoginUseCase pinLoginUseCase;
   private final LogoutUseCase logoutUseCase;
   private final GoogleLoginUseCase googleLoginUseCase;
   private final ForgotPasswordUseCase forgotPasswordUseCase;
@@ -27,11 +28,18 @@ public class AuthServiceImpl implements AuthService {
   private final ChangePasswordUseCase changePasswordUseCase;
   private final RefreshTokenUseCase refreshTokenUseCase;
   private final RegisterUseCase registerUseCase;
+  private final com.lofi.lofiapps.service.impl.usecase.auth.PinResetUseCase pinResetUseCase;
 
   @Override
   @Transactional
   public LoginResponse login(LoginRequest request) {
     return loginUseCase.execute(request);
+  }
+
+  @Override
+  @Transactional
+  public LoginResponse pinLogin(PinLoginRequest request) {
+    return pinLoginUseCase.execute(request);
   }
 
   @Override
@@ -68,6 +76,12 @@ public class AuthServiceImpl implements AuthService {
   @Transactional
   public void changePassword(ChangePasswordRequest request) {
     changePasswordUseCase.execute(request);
+  }
+
+  @Override
+  @Transactional
+  public void pinReset(PinResetRequest request) {
+    pinResetUseCase.execute(request);
   }
 
   @Override

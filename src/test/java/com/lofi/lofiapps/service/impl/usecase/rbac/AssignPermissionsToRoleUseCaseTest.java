@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 import com.lofi.lofiapps.dto.request.AssignPermissionsRequest;
 import com.lofi.lofiapps.entity.Permission;
 import com.lofi.lofiapps.entity.Role;
+import com.lofi.lofiapps.enums.RoleName;
 import com.lofi.lofiapps.exception.ResourceNotFoundException;
 import com.lofi.lofiapps.repository.PermissionRepository;
 import com.lofi.lofiapps.repository.RoleRepository;
@@ -43,7 +44,7 @@ class AssignPermissionsToRoleUseCaseTest {
     roleId = UUID.randomUUID();
     permissionId = UUID.randomUUID();
 
-    role = Role.builder().id(roleId).name("ROLE_TEST").permissions(new HashSet<>()).build();
+    role = Role.builder().id(roleId).name(RoleName.ROLE_TEST).permissions(new HashSet<>()).build();
 
     permission =
         Permission.builder()

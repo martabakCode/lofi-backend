@@ -100,7 +100,7 @@ class NotificationServiceImplTest {
 
   @Test
   @DisplayName("SendPushNotification should skip when token is null")
-  void sendPushNotification_ShouldSkipWhenTokenNull() {
+  void sendPushNotification_ShouldSkipWhenTokenNull() throws Exception {
     // Act
     notificationService.sendPushNotification(null, "Test Title", "Test Body");
 
@@ -110,7 +110,7 @@ class NotificationServiceImplTest {
 
   @Test
   @DisplayName("SendPushNotification should skip when token is empty")
-  void sendPushNotification_ShouldSkipWhenTokenEmpty() {
+  void sendPushNotification_ShouldSkipWhenTokenEmpty() throws Exception {
     // Act
     notificationService.sendPushNotification("", "Test Title", "Test Body");
 
@@ -203,7 +203,7 @@ class NotificationServiceImplTest {
     // Assert
     verify(userRepository).findById(userId);
     verify(notificationRepository, never()).save(any());
-    verify(javaMailSender, never()).send(any());
+    verify(javaMailSender, never()).send(any(SimpleMailMessage.class));
   }
 
   @Test

@@ -69,7 +69,8 @@ public class LoanController {
   }
 
   @PostMapping("/{id}/submit")
-  @PreAuthorize("hasRole('CUSTOMER')")
+  @PreAuthorize(
+      "hasRole('CUSTOMER') or hasRole('MARKETING') or hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
   @Operation(summary = "Submit a loan application")
   public ResponseEntity<ApiResponse<LoanResponse>> submitLoan(
       @PathVariable UUID id, @AuthenticationPrincipal UserPrincipal userPrincipal) {
@@ -189,6 +190,30 @@ public class LoanController {
         ApiResponse.success(
             loanService.applyLoan(request, userPrincipal.getId(), userPrincipal.getUsername()),
             "Loan applied successfully"));
+  }
+
+  @PostMapping("/draft")
+  @PreAuthorize("hasRole('CUSTOMER')")
+  @Operation(summary = "Create a loan draft")
+  public ResponseEntity<ApiResponse<LoanResponse>> draftLoan(
+      @Valid @RequestBody LoanRequest request,
+      @AuthenticationPrincipal UserPrincipal userPrincipal) {
+    return ResponseEntity.ok(
+        ApiResponse.success(
+            loanService.draftLoan(request, userPrincipal.getId(), userPrincipal.getUsername()),
+            "Loan draft created successfully"));
+  }
+
+  @PostMapping("/marketing/draft")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('MARKETING')")
+  @Operation(summary = "Marketing create a loan draft on behalf of a customer")
+  public ResponseEntity<ApiResponse<LoanResponse>> marketingDraftLoan(
+      @Valid @RequestBody com.lofi.lofiapps.dto.request.MarketingApplyLoanRequest request,
+      @AuthenticationPrincipal UserPrincipal userPrincipal) {
+    return ResponseEntity.ok(
+        ApiResponse.success(
+            loanService.marketingDraftLoan(request, userPrincipal.getUsername()),
+            "Loan draft created on behalf of customer successfully"));
   }
 
   @PostMapping("/marketing/apply-on-behalf")

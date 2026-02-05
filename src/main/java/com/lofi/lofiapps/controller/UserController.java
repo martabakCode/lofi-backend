@@ -1,11 +1,13 @@
 package com.lofi.lofiapps.controller;
 
 import com.lofi.lofiapps.dto.request.CreateUserRequest;
+import com.lofi.lofiapps.dto.request.SetPinRequest;
 import com.lofi.lofiapps.dto.request.UpdateProfileRequest;
 import com.lofi.lofiapps.dto.request.UserCriteria;
 import com.lofi.lofiapps.dto.response.ApiResponse;
 import com.lofi.lofiapps.dto.response.EligibilityAnalysisResponse;
 import com.lofi.lofiapps.dto.response.PagedResponse;
+import com.lofi.lofiapps.dto.response.PinStatusResponse;
 import com.lofi.lofiapps.dto.response.UserProfileResponse;
 import com.lofi.lofiapps.dto.response.UserSummaryResponse;
 import com.lofi.lofiapps.enums.RoleName;
@@ -81,6 +83,40 @@ public class UserController {
     return ResponseEntity.ok(
         ApiResponse.success(
             userService.updateProfilePicture(photo), "Profile photo updated successfully"));
+  }
+
+  @PutMapping("/me/pin")
+  @Operation(summary = "Update PIN")
+  public ResponseEntity<ApiResponse<Void>> updatePin(
+      @Valid @RequestBody com.lofi.lofiapps.dto.request.UpdatePinRequest request) {
+    userService.updatePin(request);
+    return ResponseEntity.ok(ApiResponse.success(null, "PIN updated successfully"));
+  }
+
+  @PostMapping("/set-pin")
+  @PreAuthorize("hasRole('CUSTOMER')")
+  @Operation(summary = "Set initial PIN")
+  public ResponseEntity<ApiResponse<Void>> setPin(@Valid @RequestBody SetPinRequest request) {
+    Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    if (!(principal instanceof UserPrincipal)) {
+      return ResponseEntity.status(401).build();
+    }
+    UUID userId = ((UserPrincipal) principal).getId();
+    userService.setPin(userId, request);
+    return ResponseEntity.ok(ApiResponse.success(null, "PIN set successfully"));
+  }
+
+  @GetMapping("/me/pin/status")
+  @Operation(summary = "Get PIN Status")
+  public ResponseEntity<ApiResponse<PinStatusResponse>> getPinStatus() {
+    Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    if (!(principal instanceof UserPrincipal)) {
+      return ResponseEntity.status(401).build();
+    }
+    UUID userId = ((UserPrincipal) principal).getId();
+    boolean isPinSet = userService.isPinSet(userId);
+    return ResponseEntity.ok(
+        ApiResponse.success(PinStatusResponse.builder().pinSet(isPinSet).build()));
   }
 
   @GetMapping(value = "/me/photo", produces = MediaType.IMAGE_JPEG_VALUE)

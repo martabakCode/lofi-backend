@@ -23,6 +23,11 @@ public class AuditLog extends BaseEntity {
   private String entityType;
   private UUID entityId;
 
+  // Alias fields for compatibility
+  private String resourceType;
+  private String resourceId;
+  private String details;
+
   @Column(columnDefinition = "TEXT")
   private String oldValue;
 

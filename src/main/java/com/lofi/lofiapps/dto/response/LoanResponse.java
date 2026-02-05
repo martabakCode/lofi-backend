@@ -63,4 +63,7 @@ public class LoanResponse {
   // Snapshot of product rates at loan creation
   private BigDecimal interestRate;
   private BigDecimal adminFee;
+
+  /** Indicates whether PIN was validated during loan application. Null if PIN was not provided. */
+  private Boolean pinValidated;
 }

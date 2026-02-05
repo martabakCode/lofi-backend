@@ -135,7 +135,7 @@ class ApplyLoanUseCaseTest {
 
     when(loanRepository.save(any(Loan.class))).thenReturn(savedLoan);
     when(loanDtoMapper.toResponse(any(Loan.class))).thenReturn(expectedResponse);
-    when(approvalHistoryFactory.recordStatusChange(any(), any(), any(), any(), any()))
+    when(approvalHistoryFactory.recordStatusChange(any(UUID.class), any(), any(), any(), any()))
         .thenReturn(null);
 
     // Act
@@ -145,7 +145,8 @@ class ApplyLoanUseCaseTest {
     assertNotNull(result);
     verify(loanRepository).save(any(Loan.class));
     verify(approvalHistoryFactory)
-        .recordStatusChange(any(), isNull(), eq(LoanStatus.DRAFT), eq(username), anyString());
+        .recordStatusChange(
+            any(UUID.class), isNull(), eq(LoanStatus.DRAFT), eq(username), anyString());
   }
 
   @Test

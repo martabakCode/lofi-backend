@@ -22,5 +22,11 @@ public interface NotificationService {
   java.util.List<com.lofi.lofiapps.dto.response.NotificationResponse> getNotifications(
       java.util.UUID userId);
 
+  void notifyLoanDisbursement(com.lofi.lofiapps.entity.Loan loan);
+
+  void notifyPinReset(String email, String newPin);
+
+  void notifyPinRequired(java.util.UUID userId);
+
   void markAsRead(java.util.UUID id);
 }

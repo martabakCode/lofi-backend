@@ -1,18 +1,22 @@
 package com.lofi.lofiapps.config;
 
 import com.lofi.lofiapps.entity.Branch;
+import com.lofi.lofiapps.entity.Permission;
 import com.lofi.lofiapps.entity.Product;
 import com.lofi.lofiapps.entity.Role;
 import com.lofi.lofiapps.entity.User;
 import com.lofi.lofiapps.enums.RoleName;
 import com.lofi.lofiapps.enums.UserStatus;
 import com.lofi.lofiapps.repository.BranchRepository;
+import com.lofi.lofiapps.repository.PermissionRepository;
 import com.lofi.lofiapps.repository.ProductRepository;
 import com.lofi.lofiapps.repository.RoleRepository;
 import com.lofi.lofiapps.repository.UserRepository;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -43,6 +47,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class DataInitializer {
 
   private final RoleRepository roleRepository;
+  private final PermissionRepository permissionRepository;
   private final UserRepository userRepository;
   private final BranchRepository branchRepository;
   private final ProductRepository productRepository;
@@ -58,10 +63,13 @@ public class DataInitializer {
     return args -> {
       log.info("Starting Data Initialization (applies to all profiles)...");
 
-      // 1. Roles - idempotent, creates only missing roles
-      initRoles();
+      // 1. Permissions - idempotent
+      Set<Permission> allPermissions = initPermissions();
 
-      // 2. Branch - idempotent, creates only if no branches exist
+      // 2. Roles - idempotent, creates only missing roles
+      initRoles(allPermissions);
+
+      // 3. Branch - idempotent, creates only if no branches exist
       Branch branch = initBranch();
 
       // 3. Product - idempotent, creates only if no products exist
@@ -74,11 +82,49 @@ public class DataInitializer {
     };
   }
 
-  private void initRoles() {
+  private Set<Permission> initPermissions() {
+    String[] permissionNames = {
+      "LOAN_CREATE", "LOAN_SUBMIT", "LOAN_REVIEW", "LOAN_APPROVE",
+      "LOAN_DISBURSE", "LOAN_ROLLBACK", "VIEW_DASHBOARD", "EXPORT_REPORT",
+      "NOTIFICATION_VIEW", "NOTIFICATION_CREATE", "NOTIFICATION_MANAGE", "NOTIFICATION_DELETE"
+    };
+
+    Set<Permission> allPermissions = new HashSet<>();
+    for (String permName : permissionNames) {
+      Permission permission =
+          permissionRepository
+              .findByName(permName)
+              .orElseGet(
+                  () ->
+                      permissionRepository.save(
+                          Permission.builder()
+                              .name(permName)
+                              .description("Permission " + permName)
+                              .build()));
+      allPermissions.add(permission);
+    }
+    return allPermissions;
+  }
+
+  private void initRoles(Set<Permission> allPermissions) {
     for (RoleName roleName : RoleName.values()) {
-      if (roleRepository.findByName(roleName).isEmpty()) {
-        roleRepository.save(Role.builder().name(roleName).build());
-        log.info("Created Role: {}", roleName);
+      Optional<Role> existingRole = roleRepository.findByName(roleName);
+      if (existingRole.isEmpty()) {
+        Set<Permission> rolePermissions = new HashSet<>();
+        if (roleName == RoleName.ROLE_ADMIN || roleName == RoleName.ROLE_SUPER_ADMIN) {
+          rolePermissions = allPermissions;
+        }
+        roleRepository.save(Role.builder().name(roleName).permissions(rolePermissions).build());
+        log.info("Created Role: {} with {} permissions", roleName, rolePermissions.size());
+      } else {
+        // Update permissions for Admin/Super Admin if they have no permissions
+        Role role = existingRole.get();
+        if ((roleName == RoleName.ROLE_ADMIN || roleName == RoleName.ROLE_SUPER_ADMIN)
+            && (role.getPermissions() == null || role.getPermissions().isEmpty())) {
+          role.setPermissions(allPermissions);
+          roleRepository.save(role);
+          log.info("Updated Role: {} with all permissions", roleName);
+        }
       }
     }
   }
@@ -139,6 +185,7 @@ public class DataInitializer {
               .status(UserStatus.ACTIVE)
               .roles(new HashSet<>(Collections.singletonList(adminRole)))
               .profileCompleted(true)
+              .pinSet(true)
               .build();
 
       userRepository.save(admin);

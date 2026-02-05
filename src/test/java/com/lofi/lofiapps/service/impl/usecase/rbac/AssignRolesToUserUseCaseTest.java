@@ -171,7 +171,7 @@ class AssignRolesToUserUseCaseTest {
     Role role2 =
         Role.builder()
             .id(roleId2)
-            .name(RoleName.ROLE_BACKOFFICE)
+            .name(RoleName.ROLE_BACK_OFFICE)
             .description("Back Office")
             .build();
 

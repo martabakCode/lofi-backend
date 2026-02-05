@@ -61,10 +61,10 @@ public class Loan extends BaseEntity {
   private String disbursementReference;
   private LocalDateTime lastStatusChangedAt;
 
-  @Column(precision = 10, scale = 8)
+  @Column(precision = 11, scale = 8)
   private BigDecimal longitude;
 
-  @Column(precision = 10, scale = 8)
+  @Column(precision = 11, scale = 8)
   private BigDecimal latitude;
 
   // Income and NPWP
@@ -107,4 +107,7 @@ public class Loan extends BaseEntity {
   private BigDecimal interestRate;
 
   private BigDecimal adminFee;
+
+  @Column(columnDefinition = "BIT DEFAULT 0")
+  private Boolean pinValidated;
 }

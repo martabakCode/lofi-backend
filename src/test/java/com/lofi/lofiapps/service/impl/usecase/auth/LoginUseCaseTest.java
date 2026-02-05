@@ -81,6 +81,10 @@ class LoginUseCaseTest {
     when(refreshTokenRepository.save(any(RefreshToken.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
+    // Mock user retrieval for pin/profile status
+    User user = User.builder().id(testUserId).pinSet(true).profileCompleted(true).build();
+    when(userRepository.findById(testUserId)).thenReturn(Optional.of(user));
+
     // Act
     LoginResponse result = loginUseCase.execute(request);
 
@@ -90,6 +94,8 @@ class LoginUseCaseTest {
     assertEquals("refresh-token", result.getRefreshToken());
     assertEquals("Bearer", result.getTokenType());
     assertEquals(3600, result.getExpiresIn());
+    assertTrue(result.getPinSet());
+    assertTrue(result.getProfileCompleted());
 
     verify(authenticationManager, times(1))
         .authenticate(any(UsernamePasswordAuthenticationToken.class));
@@ -97,6 +103,7 @@ class LoginUseCaseTest {
     verify(jwtUtils, times(1)).generateRefreshToken(authentication);
     verify(refreshTokenRepository, times(1)).deleteByUserId(testUserId);
     verify(refreshTokenRepository, times(1)).save(any(RefreshToken.class));
+    verify(userRepository, times(1)).findById(testUserId);
   }
 
   @Test

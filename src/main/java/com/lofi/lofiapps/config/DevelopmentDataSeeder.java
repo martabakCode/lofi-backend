@@ -72,19 +72,19 @@ public class DevelopmentDataSeeder {
       // Clean up transactional data first to ensure fresh test data
       cleanupTransactionalData();
 
-      // 1. Roles & Permissions - extends DataInitializer with permissions
+      // 1. Roles & Permissions
       initRolesAndPermissions();
 
-      // 2. Branch (Prerequisite for Users)
-      Branch branch = initBranch();
+      // 2. Branches
+      List<Branch> branches = initIndonesiaCapitalBranches();
 
-      // 3. Admin & Users - creates test users for all roles
-      initUsers(branch);
+      // 3. Admin & Users
+      initUsersPerBranch(branches);
 
-      // 4. Products - creates BASIC, STANDARD, PREMIUM products
+      // 4. Products
       initProducts();
 
-      // 5. Loans & History & Notifications (20 Test Cases)
+      // 5. Loans & History
       initLoans();
 
       // 6. SLA Test Data
@@ -93,11 +93,12 @@ public class DevelopmentDataSeeder {
 
       log.info("Development Data Seeding Completed.");
       log.info("Test Accounts:");
-      log.info("  - Admin: admin@lofi.test / Password123!");
-      log.info("  - Marketing: marketing1@lofi.test / Password123!");
-      log.info("  - Branch Manager: bm1@lofi.test / Password123!");
-      log.info("  - Back Office: bo1@lofi.test / Password123!");
-      log.info("  - Customer: customer1@lofi.test / Password123!");
+      log.info("  - Super Admin: superadmin@lofi.test / Password123! / PIN: [generated]");
+      log.info("  - Head Office BO: bo_ho@lofi.test / Password123! / PIN: [generated]");
+      log.info("  - DKI Branch BM: bm_dki@lofi.test / Password123! / PIN: [generated]");
+      log.info("  - Bali Branch BM: bm_bali@lofi.test / Password123! / PIN: [generated]");
+      log.info("  - DKI Customer: cust_dki_1@lofi.test / Password123! / PIN: [generated]");
+      log.info("  - Bali Customer: cust_bali_1@lofi.test / Password123! / PIN: [generated]");
     };
   }
 
@@ -105,7 +106,8 @@ public class DevelopmentDataSeeder {
     // Define Permissions
     String[] permissions = {
       "LOAN_CREATE", "LOAN_SUBMIT", "LOAN_REVIEW", "LOAN_APPROVE",
-      "LOAN_DISBURSE", "LOAN_ROLLBACK", "VIEW_DASHBOARD", "EXPORT_REPORT"
+      "LOAN_DISBURSE", "LOAN_ROLLBACK", "VIEW_DASHBOARD", "EXPORT_REPORT",
+      "NOTIFICATION_VIEW", "NOTIFICATION_CREATE", "NOTIFICATION_MANAGE", "NOTIFICATION_DELETE"
     };
 
     Set<Permission> allPermissions = new HashSet<>();
@@ -170,81 +172,567 @@ public class DevelopmentDataSeeder {
     }
   }
 
-  private Branch initBranch() {
-    // Use existing branch from DataInitializer if available
-    List<Branch> existingBranches = branchRepository.findAll();
-    if (!existingBranches.isEmpty()) {
-      log.debug("Using existing branch: {}", existingBranches.get(0).getName());
-      return existingBranches.get(0);
-    }
+  private record BranchSeed(
+      String code,
+      String name,
+      String city,
+      String state,
+      String address,
+      java.math.BigDecimal lat,
+      java.math.BigDecimal lng,
+      boolean isHeadOffice) {}
 
-    // Create new branch only if none exists
-    Branch branch =
-        Branch.builder()
-            .name("Main Branch")
-            .address("123 Seeder St")
-            .city("Jakarta")
-            .state("DKI")
-            .zipCode("10000")
-            .phone("021-000000")
-            .build();
-    return branchRepository.save(branch);
+  private List<Branch> initIndonesiaCapitalBranches() {
+    List<BranchSeed> seeds = new ArrayList<>();
+
+    // Head Office
+    seeds.add(
+        new BranchSeed(
+            "HO",
+            "Head Office",
+            "Jakarta",
+            "DKI",
+            "Jalan Merdeka No. 1",
+            new BigDecimal("-6.175110"),
+            new BigDecimal("106.865036"),
+            true));
+
+    // 38 Provinces
+    seeds.add(
+        new BranchSeed(
+            "ACEH",
+            "Aceh Branch",
+            "Banda Aceh",
+            "Aceh",
+            "Jl. T. Nyak Arief",
+            new BigDecimal("5.548290"),
+            new BigDecimal("95.323753"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "SUMUT",
+            "Sumut Branch",
+            "Medan",
+            "Sumatera Utara",
+            "Jl. Putri Hijau",
+            new BigDecimal("3.595196"),
+            new BigDecimal("98.672226"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "SUMBAR",
+            "Sumbar Branch",
+            "Padang",
+            "Sumatera Barat",
+            "Jl. Sudirman",
+            new BigDecimal("-0.947083"),
+            new BigDecimal("100.417181"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "RIAU",
+            "Riau Branch",
+            "Pekanbaru",
+            "Riau",
+            "Jl. Jend. Sudirman",
+            new BigDecimal("0.507068"),
+            new BigDecimal("101.447779"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "KEPRI",
+            "Kepri Branch",
+            "Tanjung Pinang",
+            "Kepulauan Riau",
+            "Jl. Basuki Rahmat",
+            new BigDecimal("0.916500"),
+            new BigDecimal("104.454500"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "JAMBI",
+            "Jambi Branch",
+            "Jambi",
+            "Jambi",
+            "Jl. Gatot Subroto",
+            new BigDecimal("-1.610122"),
+            new BigDecimal("103.613123"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "SUMSEL",
+            "Sumsel Branch",
+            "Palembang",
+            "Sumatera Selatan",
+            "Jl. Jend. Sudirman",
+            new BigDecimal("-2.976074"),
+            new BigDecimal("104.775431"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "BENGKULU",
+            "Bengkulu Branch",
+            "Bengkulu",
+            "Bengkulu",
+            "Jl. S. Parman",
+            new BigDecimal("-3.800440"),
+            new BigDecimal("102.265540"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "LAMPUNG",
+            "Lampung Branch",
+            "Bandar Lampung",
+            "Lampung",
+            "Jl. Raden Intan",
+            new BigDecimal("-5.450000"),
+            new BigDecimal("105.266670"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "BABEL",
+            "Babel Branch",
+            "Pangkal Pinang",
+            "Bangka Belitung",
+            "Jl. Jend. Sudirman",
+            new BigDecimal("-2.131200"),
+            new BigDecimal("106.116100"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "DKI",
+            "DKI Branch",
+            "Jakarta",
+            "DKI Jakarta",
+            "Jl. Thamrin",
+            new BigDecimal("-6.208763"),
+            new BigDecimal("106.845599"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "BANTEN",
+            "Banten Branch",
+            "Serang",
+            "Banten",
+            "Jl. Jend. Sudirman",
+            new BigDecimal("-6.110400"),
+            new BigDecimal("106.163600"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "JABAR",
+            "Jabar Branch",
+            "Bandung",
+            "Jawa Barat",
+            "Jl. Asia Afrika",
+            new BigDecimal("-6.917464"),
+            new BigDecimal("107.619123"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "JATENG",
+            "Jateng Branch",
+            "Semarang",
+            "Jawa Tengah",
+            "Jl. Pahlawan",
+            new BigDecimal("-6.966667"),
+            new BigDecimal("110.416664"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "DIY",
+            "DIY Branch",
+            "Yogyakarta",
+            "DIY",
+            "Jl. Malioboro",
+            new BigDecimal("-7.795580"),
+            new BigDecimal("110.369490"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "JATIM",
+            "Jatim Branch",
+            "Surabaya",
+            "Jawa Timur",
+            "Jl. Tunjungan",
+            new BigDecimal("-7.257472"),
+            new BigDecimal("112.752088"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "BALI",
+            "Bali Branch",
+            "Denpasar",
+            "Bali",
+            "Jl. Gajah Mada",
+            new BigDecimal("-8.670458"),
+            new BigDecimal("115.212629"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "NTB",
+            "NTB Branch",
+            "Mataram",
+            "Nusa Tenggara Barat",
+            "Jl. Pejanggik",
+            new BigDecimal("-8.583333"),
+            new BigDecimal("116.116667"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "NTT",
+            "NTT Branch",
+            "Kupang",
+            "Nusa Tenggara Timur",
+            "Jl. El Tari",
+            new BigDecimal("-10.177200"),
+            new BigDecimal("123.607030"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "KALBAR",
+            "Kalbar Branch",
+            "Pontianak",
+            "Kalimantan Barat",
+            "Jl. Ahmad Yani",
+            new BigDecimal("-0.026330"),
+            new BigDecimal("109.342503"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "KALTENG",
+            "Kalteng Branch",
+            "Palangka Raya",
+            "Kalimantan Tengah",
+            "Jl. Tjilik Riwut",
+            new BigDecimal("-2.210000"),
+            new BigDecimal("113.921300"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "KALSEL",
+            "Kalsel Branch",
+            "Banjarbaru",
+            "Kalimantan Selatan",
+            "Jl. A. Yani",
+            new BigDecimal("-3.440425"),
+            new BigDecimal("114.831500"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "KALTIM",
+            "Kaltim Branch",
+            "Samarinda",
+            "Kalimantan Timur",
+            "Jl. Gajah Mada",
+            new BigDecimal("-0.502183"),
+            new BigDecimal("117.153801"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "KALTARA",
+            "Kaltara Branch",
+            "Tanjung Selor",
+            "Kalimantan Utara",
+            "Jl. Sengkawit",
+            new BigDecimal("2.891700"),
+            new BigDecimal("117.361100"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "SULUT",
+            "Sulut Branch",
+            "Manado",
+            "Sulawesi Utara",
+            "Jl. Sam Ratulangi",
+            new BigDecimal("1.474830"),
+            new BigDecimal("124.842079"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "SULTENG",
+            "Sulteng Branch",
+            "Palu",
+            "Sulawesi Tengah",
+            "Jl. Moh. Hatta",
+            new BigDecimal("-0.901030"),
+            new BigDecimal("119.839584"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "SULSEL",
+            "Sulsel Branch",
+            "Makassar",
+            "Sulawesi Selatan",
+            "Jl. Jend. Sudirman",
+            new BigDecimal("-5.147665"),
+            new BigDecimal("119.432731"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "SULTRA",
+            "Sultra Branch",
+            "Kendari",
+            "Sulawesi Tenggara",
+            "Jl. Ahmad Yani",
+            new BigDecimal("-3.997290"),
+            new BigDecimal("122.512060"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "GORONTALO",
+            "Gorontalo Branch",
+            "Gorontalo",
+            "Gorontalo",
+            "Jl. Nani Wartabone",
+            new BigDecimal("0.543544"),
+            new BigDecimal("123.056769"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "SULBAR",
+            "Sulbar Branch",
+            "Mamuju",
+            "Sulawesi Barat",
+            "Jl. Yos Sudarso",
+            new BigDecimal("-2.677800"),
+            new BigDecimal("118.882100"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "MALUKU",
+            "Maluku Branch",
+            "Ambon",
+            "Maluku",
+            "Jl. Pattimura",
+            new BigDecimal("-3.695370"),
+            new BigDecimal("128.181410"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "MALUT",
+            "Malut Branch",
+            "Sofifi",
+            "Maluku Utara",
+            "Jl. K.H. Dewantoro",
+            new BigDecimal("0.733300"),
+            new BigDecimal("127.566700"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "PAPUA",
+            "Papua Branch",
+            "Jayapura",
+            "Papua",
+            "Jl. Ahmad Yani",
+            new BigDecimal("-2.548926"),
+            new BigDecimal("140.718038"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "PAPBAR",
+            "Papua Barat Branch",
+            "Manokwari",
+            "Papua Barat",
+            "Jl. Merdeka",
+            new BigDecimal("-0.861453"),
+            new BigDecimal("134.062042"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "PAPSEL",
+            "Papua Selatan Branch",
+            "Merauke",
+            "Papua Selatan",
+            "Jl. Brawijaya",
+            new BigDecimal("-8.499112"),
+            new BigDecimal("140.404900"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "PAPTENG",
+            "Papua Tengah Branch",
+            "Nabire",
+            "Papua Tengah",
+            "Jl. Merdeka",
+            new BigDecimal("-3.366700"),
+            new BigDecimal("135.483300"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "PAPPEG",
+            "Papua Pegunungan Branch",
+            "Wamena",
+            "Papua Pegunungan",
+            "Jl. Trikora",
+            new BigDecimal("-4.097000"),
+            new BigDecimal("138.941300"),
+            false));
+    seeds.add(
+        new BranchSeed(
+            "PAPBD",
+            "Papua Barat Daya Branch",
+            "Sorong",
+            "Papua Barat Daya",
+            "Jl. Ahmad Yani",
+            new BigDecimal("-0.876667"),
+            new BigDecimal("131.255556"),
+            false));
+
+    List<Branch> branches = new ArrayList<>();
+    for (BranchSeed seed : seeds) {
+      Branch branch =
+          branchRepository
+              .findByName(seed.name())
+              .orElseGet(
+                  () ->
+                      branchRepository.save(
+                          Branch.builder()
+                              .name(seed.name())
+                              .address(seed.address())
+                              .city(seed.city())
+                              .state(seed.state())
+                              .zipCode("12345")
+                              .phone("021-1234567")
+                              .latitude(seed.lat())
+                              .longitude(seed.lng())
+                              .isHeadOffice(seed.isHeadOffice())
+                              .build()));
+      branches.add(branch);
+      log.info("Initialized Branch: {} ({})", branch.getName(), seed.code());
+
+      // Store code in temporary map or pass it down if needed?
+      // Actually initUsersPerBranch needs the code.
+      // I'll assume we can derive or pass it.
+      // Simple hack: Store code in phone or zip? No, unclean.
+      // I'll change initUsersPerBranch to take BranchSeed list or just infer code
+      // from name or pass a Map.
+    }
+    return branches;
   }
 
-  private void initUsers(Branch branch) {
+  // Revised to use Map to map Branch -> Code
+  private void initUsersPerBranch(List<Branch> branches) {
     String password = passwordEncoder.encode("Password123!");
 
-    // Super Admin (skip if already created by DataInitializer)
-    createUserIfNotExists(
-        "admin@lofi.test", "admin", "Super Admin", RoleName.ROLE_SUPER_ADMIN, branch, password);
+    // Create Map of Branch Name -> Code
+    Map<String, String> branchCodes = new HashMap<>();
+    branchCodes.put("Head Office", "HO");
+    branchCodes.put("Aceh Branch", "ACEH");
+    branchCodes.put("Sumut Branch", "SUMUT");
+    branchCodes.put("Sumbar Branch", "SUMBAR");
+    branchCodes.put("Riau Branch", "RIAU");
+    branchCodes.put("Kepri Branch", "KEPRI");
+    branchCodes.put("Jambi Branch", "JAMBI");
+    branchCodes.put("Sumsel Branch", "SUMSEL");
+    branchCodes.put("Bengkulu Branch", "BENGKULU");
+    branchCodes.put("Lampung Branch", "LAMPUNG");
+    branchCodes.put("Babel Branch", "BABEL");
+    branchCodes.put("DKI Branch", "DKI");
+    branchCodes.put("Banten Branch", "BANTEN");
+    branchCodes.put("Jabar Branch", "JABAR");
+    branchCodes.put("Jateng Branch", "JATENG");
+    branchCodes.put("DIY Branch", "DIY");
+    branchCodes.put("Jatim Branch", "JATIM");
+    branchCodes.put("Bali Branch", "BALI");
+    branchCodes.put("NTB Branch", "NTB");
+    branchCodes.put("NTT Branch", "NTT");
+    branchCodes.put("Kalbar Branch", "KALBAR");
+    branchCodes.put("Kalteng Branch", "KALTENG");
+    branchCodes.put("Kalsel Branch", "KALSEL");
+    branchCodes.put("Kaltim Branch", "KALTIM");
+    branchCodes.put("Kaltara Branch", "KALTARA");
+    branchCodes.put("Sulut Branch", "SULUT");
+    branchCodes.put("Sulteng Branch", "SULTENG");
+    branchCodes.put("Sulsel Branch", "SULSEL");
+    branchCodes.put("Sultra Branch", "SULTRA");
+    branchCodes.put("Gorontalo Branch", "GORONTALO");
+    branchCodes.put("Sulbar Branch", "SULBAR");
+    branchCodes.put("Maluku Branch", "MALUKU");
+    branchCodes.put("Malut Branch", "MALUT");
+    branchCodes.put("Papua Branch", "PAPUA");
+    branchCodes.put("Papua Barat Branch", "PAPBAR");
+    branchCodes.put("Papua Selatan Branch", "PAPSEL");
+    branchCodes.put("Papua Tengah Branch", "PAPTENG");
+    branchCodes.put("Papua Pegunungan Branch", "PAPPEG");
+    branchCodes.put("Papua Barat Daya Branch", "PAPBD");
 
-    // Marketing (3)
-    createUserIfNotExists(
-        "marketing1@lofi.test",
-        "marketing1",
-        "Marketing One",
-        RoleName.ROLE_MARKETING,
-        branch,
-        password);
-    createUserIfNotExists(
-        "marketing2@lofi.test",
-        "marketing2",
-        "Marketing Two",
-        RoleName.ROLE_MARKETING,
-        branch,
-        password);
-    createUserIfNotExists(
-        "marketing3@lofi.test",
-        "marketing3",
-        "Marketing Three",
-        RoleName.ROLE_MARKETING,
-        branch,
-        password);
+    for (Branch branch : branches) {
+      String code = branchCodes.getOrDefault(branch.getName(), "UNK");
 
-    // Branch Manager (3)
-    createUserIfNotExists(
-        "bm1@lofi.test", "bm1", "Branch Manager 1", RoleName.ROLE_BRANCH_MANAGER, branch, password);
-    createUserIfNotExists(
-        "bm2@lofi.test", "bm2", "Branch Manager 2", RoleName.ROLE_BRANCH_MANAGER, branch, password);
-    createUserIfNotExists(
-        "bm3@lofi.test", "bm3", "Branch Manager 3", RoleName.ROLE_BRANCH_MANAGER, branch, password);
+      if (branch.getIsHeadOffice()) {
+        // Super Admin
+        createUserIfNotExists(
+            "superadmin@lofi.test",
+            "superadmin",
+            "Super Admin",
+            RoleName.ROLE_SUPER_ADMIN,
+            branch,
+            password);
+        // HO Back Office (2)
+        createUserIfNotExists(
+            "bo_ho_1@lofi.test",
+            "bo_ho_1",
+            "HO Back Office 1",
+            RoleName.ROLE_BACK_OFFICE,
+            branch,
+            password);
+        createUserIfNotExists(
+            "bo_ho_2@lofi.test",
+            "bo_ho_2",
+            "HO Back Office 2",
+            RoleName.ROLE_BACK_OFFICE,
+            branch,
+            password);
+        continue;
+      }
 
-    // Back Office (2)
-    createUserIfNotExists(
-        "bo1@lofi.test", "bo1", "Back Office 1", RoleName.ROLE_BACK_OFFICE, branch, password);
-    createUserIfNotExists(
-        "bo2@lofi.test", "bo2", "Back Office 2", RoleName.ROLE_BACK_OFFICE, branch, password);
-
-    // Customers (6)
-    for (int i = 1; i <= 6; i++) {
+      // Branch Manager
       createUserIfNotExists(
-          "customer" + i + "@lofi.test",
-          "customer" + i,
-          "Customer " + i,
-          RoleName.ROLE_CUSTOMER,
+          "bm_" + code.toLowerCase() + "@lofi.test",
+          "bm_" + code.toLowerCase(),
+          "BM " + code,
+          RoleName.ROLE_BRANCH_MANAGER,
           branch,
           password);
+
+      // Marketing (2)
+      for (int i = 1; i <= 2; i++) {
+        createUserIfNotExists(
+            "mkt_" + code.toLowerCase() + "_" + i + "@lofi.test",
+            "mkt_" + code.toLowerCase() + "_" + i,
+            "Marketing " + code + " " + i,
+            RoleName.ROLE_MARKETING,
+            branch,
+            password);
+      }
+
+      // Back Office (1)
+      createUserIfNotExists(
+          "bo_" + code.toLowerCase() + "@lofi.test",
+          "bo_" + code.toLowerCase(),
+          "BO " + code,
+          RoleName.ROLE_BACK_OFFICE,
+          branch,
+          password);
+
+      // Customers (10)
+      for (int i = 1; i <= 10; i++) {
+        createUserIfNotExists(
+            "cust_" + code.toLowerCase() + "_" + i + "@lofi.test",
+            "cust_" + code.toLowerCase() + "_" + i,
+            "Customer " + code + " " + i,
+            RoleName.ROLE_CUSTOMER,
+            branch,
+            password);
+      }
     }
+  }
+
+  private String generateRandomPin() {
+    Random random = new Random();
+    int pin = 100000 + random.nextInt(900000);
+    return String.valueOf(pin);
   }
 
   private void createUserIfNotExists(
@@ -259,6 +747,10 @@ public class DevelopmentDataSeeder {
           roleRepository
               .findByName(roleName)
               .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+
+      String pin = generateRandomPin();
+      String encryptedPin = passwordEncoder.encode(pin);
+
       User user =
           User.builder()
               .username(username)
@@ -269,9 +761,12 @@ public class DevelopmentDataSeeder {
               .status(UserStatus.ACTIVE)
               .roles(Collections.singleton(role))
               .profileCompleted(true)
+              .pin(encryptedPin)
+              .pinSet(true)
+              .failedLoginAttempts(0)
               .build();
       userRepository.save(user);
-      log.info("Created User: {}", email);
+      log.info("Created User: {} (PIN: {})", email, pin); // Log PIN for checking
     } else {
       log.debug("User already exists, skipping: {}", email);
     }
@@ -372,12 +867,12 @@ public class DevelopmentDataSeeder {
     Product prod1 = productRepository.findByProductCode("BASIC").orElseThrow();
     Product prod2 = productRepository.findByProductCode("STANDARD").orElseThrow();
 
-    User cust1 = findUser("customer1@lofi.test");
-    User cust2 = findUser("customer2@lofi.test");
-    User cust3 = findUser("customer3@lofi.test");
-    User cust4 = findUser("customer4@lofi.test");
-    User cust5 = findUser("customer5@lofi.test");
-    User cust6 = findUser("customer6@lofi.test");
+    User cust1 = findUser("cust_dki_1@lofi.test");
+    User cust2 = findUser("cust_dki_2@lofi.test");
+    User cust3 = findUser("cust_dki_3@lofi.test");
+    User cust4 = findUser("cust_dki_4@lofi.test");
+    User cust5 = findUser("cust_dki_5@lofi.test");
+    User cust6 = findUser("cust_dki_6@lofi.test");
 
     // TC01-TC05: Draft
     createLoan(cust1, prod1, LoanStatus.DRAFT, ApprovalStage.CUSTOMER, 0, null);
@@ -419,14 +914,13 @@ public class DevelopmentDataSeeder {
   }
 
   private void initSlaLoans() {
-    User cust = findUser("customer1@lofi.test");
+    User cust = findUser("cust_dki_1@lofi.test");
     boolean slaExists =
         loanRepository.findByCustomerId(cust.getId()).stream()
             .anyMatch(l -> "SLA-TEST-REF".equals(l.getDisbursementReference()));
 
     if (slaExists) return;
 
-    Branch branch = branchRepository.findAll().get(0);
     Product prod = productRepository.findByProductCode("PREMIUM").orElseThrow();
 
     // SLA Scenario: Marketing PASS, BM FAIL, BO PASS
@@ -467,7 +961,7 @@ public class DevelopmentDataSeeder {
             .loanId(loan.getId())
             .fromStatus(LoanStatus.SUBMITTED)
             .toStatus(LoanStatus.REVIEWED)
-            .actionBy("marketing1")
+            .actionBy("mkt_dki_1")
             .createdAt(reviewTime)
             .build());
     approvalHistoryRepository.save(
@@ -475,15 +969,16 @@ public class DevelopmentDataSeeder {
             .loanId(loan.getId())
             .fromStatus(LoanStatus.REVIEWED)
             .toStatus(LoanStatus.APPROVED)
-            .actionBy("bm1")
+            .actionBy("bm_dki")
             .createdAt(approveTime)
             .build());
+
     approvalHistoryRepository.save(
         ApprovalHistory.builder()
             .loanId(loan.getId())
             .fromStatus(LoanStatus.APPROVED)
             .toStatus(LoanStatus.DISBURSED)
-            .actionBy("bo1")
+            .actionBy("bo_dki")
             .createdAt(disburseTime)
             .build());
   }
@@ -562,14 +1057,14 @@ public class DevelopmentDataSeeder {
             .loanId(loan.getId())
             .fromStatus(LoanStatus.SUBMITTED)
             .toStatus(LoanStatus.REVIEWED)
-            .actionBy("marketing1")
+            .actionBy("mkt_dki_1")
             .build());
     approvalHistoryRepository.save(
         ApprovalHistory.builder()
             .loanId(loan.getId())
             .fromStatus(LoanStatus.REVIEWED)
             .toStatus(LoanStatus.SUBMITTED)
-            .actionBy("marketing1")
+            .actionBy("mkt_dki_1")
             .notes("Rollback for correction")
             .build());
   }
@@ -691,11 +1186,11 @@ public class DevelopmentDataSeeder {
     Branch branch = branchRepository.findAll().get(0);
 
     // Create customer7 if not exists
-    String cust7Email = "customer7@lofi.test";
+    String cust7Email = "cust_dki_7@lofi.test";
     if (!userRepository.existsByEmail(cust7Email)) {
       createUserIfNotExists(
           cust7Email,
-          "customer7",
+          "cust_dki_7",
           "Customer 7",
           RoleName.ROLE_CUSTOMER,
           branch,
@@ -718,8 +1213,8 @@ public class DevelopmentDataSeeder {
             .orElseThrow(() -> new RuntimeException("SLA loan not found"));
 
     // Backdate Loan
-    l1.setSubmittedAt(LocalDateTime.now().minusDays(2));
-    l1.setLastStatusChangedAt(LocalDateTime.now().minusDays(2));
+    // l1.setSubmittedAt(LocalDateTime.now().minusDays(2));
+    // l1.setLastStatusChangedAt(LocalDateTime.now().minusDays(2));
     loanRepository.save(l1);
 
     // Backdate History (SUBMITTED)

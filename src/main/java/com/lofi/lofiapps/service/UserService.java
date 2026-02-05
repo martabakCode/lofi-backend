@@ -1,6 +1,7 @@
 package com.lofi.lofiapps.service;
 
 import com.lofi.lofiapps.dto.request.CreateUserRequest;
+import com.lofi.lofiapps.dto.request.SetPinRequest;
 import com.lofi.lofiapps.dto.request.UpdateProfileRequest;
 import com.lofi.lofiapps.dto.response.*;
 import java.util.UUID;
@@ -21,6 +22,12 @@ public interface UserService {
   UserProfileResponse updateProfile(UpdateProfileRequest request, String userAgent);
 
   UserProfileResponse updateProfilePicture(org.springframework.web.multipart.MultipartFile photo);
+
+  void updatePin(com.lofi.lofiapps.dto.request.UpdatePinRequest request);
+
+  void setPin(UUID userId, SetPinRequest request);
+
+  boolean isPinSet(UUID userId);
 
   byte[] getProfilePhoto(UUID userId);
 

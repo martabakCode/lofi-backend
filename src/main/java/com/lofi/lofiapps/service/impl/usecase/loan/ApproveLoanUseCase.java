@@ -1,20 +1,21 @@
 package com.lofi.lofiapps.service.impl.usecase.loan;
 
 import com.lofi.lofiapps.dto.response.LoanResponse;
-import com.lofi.lofiapps.entity.ApprovalHistory;
 import com.lofi.lofiapps.entity.Loan;
 import com.lofi.lofiapps.entity.User;
 import com.lofi.lofiapps.enums.ApprovalStage;
 import com.lofi.lofiapps.enums.LoanStatus;
 import com.lofi.lofiapps.exception.ResourceNotFoundException;
 import com.lofi.lofiapps.mapper.LoanDtoMapper;
-import com.lofi.lofiapps.repository.ApprovalHistoryRepository;
 import com.lofi.lofiapps.repository.LoanRepository;
 import com.lofi.lofiapps.repository.UserRepository;
 import com.lofi.lofiapps.service.BranchAccessGuard;
 import com.lofi.lofiapps.service.LoanActionValidator;
 import com.lofi.lofiapps.service.NotificationService;
 import com.lofi.lofiapps.service.RoleActionGuard;
+import com.lofi.lofiapps.service.impl.calculator.PlafondCalculator;
+import com.lofi.lofiapps.service.impl.factory.ApprovalHistoryFactory;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -29,12 +30,13 @@ public class ApproveLoanUseCase {
 
   private final LoanRepository loanRepository;
   private final UserRepository userRepository;
-  private final ApprovalHistoryRepository approvalHistoryRepository;
   private final NotificationService notificationService;
   private final RoleActionGuard roleActionGuard;
   private final BranchAccessGuard branchAccessGuard;
   private final LoanActionValidator loanActionValidator;
   private final LoanDtoMapper loanDtoMapper;
+  private final PlafondCalculator plafondCalculator;
+  private final ApprovalHistoryFactory approvalHistoryFactory;
 
   @Transactional
   public LoanResponse execute(UUID loanId, String approverUsername, String notes) {
@@ -63,7 +65,7 @@ public class ApproveLoanUseCase {
 
     // Validate available plafond before approving
     if (customer.getProduct() != null) {
-      java.math.BigDecimal availablePlafond = calculateAvailablePlafond(customer);
+      BigDecimal availablePlafond = plafondCalculator.calculateAvailablePlafond(customer, loanId);
       if (loan.getLoanAmount().compareTo(availablePlafond) > 0) {
         throw new IllegalStateException(
             "Cannot approve loan: Loan amount ("
@@ -96,14 +98,9 @@ public class ApproveLoanUseCase {
     Loan savedLoan = loanRepository.save(loan);
 
     // Save history
-    approvalHistoryRepository.save(
-        ApprovalHistory.builder()
-            .loanId(loan.getId())
-            .fromStatus(fromStatus)
-            .toStatus(LoanStatus.APPROVED)
-            .actionBy(approverUsername)
-            .notes(notes)
-            .build());
+    // Save history
+    approvalHistoryFactory.recordStatusChange(
+        loan.getId(), fromStatus, LoanStatus.APPROVED, approverUsername, notes);
 
     // Auto-cancel other active loans for this customer
     cancelOtherActiveLoans(customerId, loan.getId());
@@ -129,52 +126,17 @@ public class ApproveLoanUseCase {
               l.setLastStatusChangedAt(LocalDateTime.now());
               loanRepository.save(l);
 
-              approvalHistoryRepository.save(
-                  ApprovalHistory.builder()
-                      .loanId(l.getId())
-                      .fromStatus(oldStatus)
-                      .toStatus(LoanStatus.CANCELLED)
-                      .actionBy("SYSTEM")
-                      .notes("Auto-cancelled because another loan was approved")
-                      .build());
+              approvalHistoryFactory.recordStatusChange(
+                  l.getId(),
+                  oldStatus,
+                  LoanStatus.CANCELLED,
+                  "SYSTEM",
+                  "Auto-cancelled because another loan was approved");
 
               if (l.getCustomer() != null) {
                 notificationService.notifyLoanStatusChange(
                     l.getCustomer().getId(), LoanStatus.CANCELLED);
               }
             });
-  }
-
-  /**
-   * Calculates the available plafond (remaining credit limit) for a user. Formula: Product
-   * maxLoanAmount - Sum of all APPROVED/DISBURSED/COMPLETED loans (excluding the current loan being
-   * processed)
-   */
-  private java.math.BigDecimal calculateAvailablePlafond(User customer) {
-    if (customer.getProduct() == null) {
-      return java.math.BigDecimal.ZERO;
-    }
-
-    java.math.BigDecimal maxPlafond = customer.getProduct().getMaxLoanAmount();
-
-    // Calculate total of active/approved loans
-    java.math.BigDecimal usedPlafond =
-        loanRepository.findByCustomerId(customer.getId()).stream()
-            .filter(
-                loan ->
-                    loan.getLoanStatus() == LoanStatus.APPROVED
-                        || loan.getLoanStatus() == LoanStatus.DISBURSED
-                        || loan.getLoanStatus() == LoanStatus.COMPLETED)
-            .map(
-                loan ->
-                    loan.getLoanAmount() != null ? loan.getLoanAmount() : java.math.BigDecimal.ZERO)
-            .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
-
-    java.math.BigDecimal availablePlafond = maxPlafond.subtract(usedPlafond);
-
-    // Ensure not negative
-    return availablePlafond.compareTo(java.math.BigDecimal.ZERO) > 0
-        ? availablePlafond
-        : java.math.BigDecimal.ZERO;
   }
 }

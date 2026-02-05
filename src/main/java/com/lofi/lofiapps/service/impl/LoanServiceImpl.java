@@ -8,6 +8,7 @@ import com.lofi.lofiapps.dto.response.LoanAnalysisResponse;
 import com.lofi.lofiapps.dto.response.LoanResponse;
 import com.lofi.lofiapps.dto.response.MarketingLoanReviewResponse;
 import com.lofi.lofiapps.dto.response.PagedResponse;
+import com.lofi.lofiapps.enums.LoanStatus;
 import com.lofi.lofiapps.service.LoanService;
 import com.lofi.lofiapps.service.impl.usecase.loan.AnalyzeLoanUseCase;
 import com.lofi.lofiapps.service.impl.usecase.loan.ApplyLoanUseCase;
@@ -24,6 +25,7 @@ import com.lofi.lofiapps.service.impl.usecase.loan.RejectLoanUseCase;
 import com.lofi.lofiapps.service.impl.usecase.loan.ReviewLoanUseCase;
 import com.lofi.lofiapps.service.impl.usecase.loan.RollbackLoanUseCase;
 import com.lofi.lofiapps.service.impl.usecase.loan.SubmitLoanUseCase;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +50,9 @@ public class LoanServiceImpl implements LoanService {
   private final CompleteLoanUseCase completeLoanUseCase;
   private final com.lofi.lofiapps.service.impl.usecase.loan.MarketingApplyLoanUseCase
       marketingApplyLoanUseCase;
+  private final com.lofi.lofiapps.service.impl.usecase.loan.DraftLoanUseCase draftLoanUseCase;
+  private final com.lofi.lofiapps.service.impl.usecase.loan.MarketingDraftLoanUseCase
+      marketingDraftLoanUseCase;
 
   // AI / Analysis UseCases
   private final AnalyzeLoanUseCase analyzeLoanUseCase;
@@ -61,9 +66,20 @@ public class LoanServiceImpl implements LoanService {
   }
 
   @Override
+  public LoanResponse draftLoan(LoanRequest request, UUID userId, String username) {
+    return draftLoanUseCase.execute(request, userId, username);
+  }
+
+  @Override
   public LoanResponse marketingApplyLoan(
       com.lofi.lofiapps.dto.request.MarketingApplyLoanRequest request, String marketingUsername) {
     return marketingApplyLoanUseCase.execute(request, marketingUsername);
+  }
+
+  @Override
+  public LoanResponse marketingDraftLoan(
+      com.lofi.lofiapps.dto.request.MarketingApplyLoanRequest request, String marketingUsername) {
+    return marketingDraftLoanUseCase.execute(request, marketingUsername);
   }
 
   @Override
@@ -73,12 +89,18 @@ public class LoanServiceImpl implements LoanService {
 
   @Override
   public PagedResponse<LoanResponse> getMyLoans(UUID customerId, Pageable pageable) {
-    LoanCriteria criteria = LoanCriteria.builder().customerId(customerId).build();
+    // Active loans should exclude DRAFT and CANCELLED statuses
+    LoanCriteria criteria =
+        LoanCriteria.builder()
+            .customerId(customerId)
+            .excludeStatuses(List.of(LoanStatus.DRAFT, LoanStatus.CANCELLED))
+            .build();
     return getLoansUseCase.execute(criteria, pageable);
   }
 
   @Override
   public PagedResponse<LoanResponse> getLoanHistory(UUID customerId, Pageable pageable) {
+    // Loan history should show all loans including DRAFT and CANCELLED
     LoanCriteria criteria = LoanCriteria.builder().customerId(customerId).build();
     return getLoansUseCase.execute(criteria, pageable);
   }

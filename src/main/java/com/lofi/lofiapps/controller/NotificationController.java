@@ -40,7 +40,7 @@ public class NotificationController {
 
   // Admin endpoints
   @GetMapping("/all")
-  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+  @PreAuthorize("hasAuthority('NOTIFICATION_VIEW')")
   @Operation(summary = "Get all notifications (Admin only)")
   public ResponseEntity<ApiResponse<PagedResponse<NotificationResponse>>> getAllNotifications(
       @PageableDefault(size = 20) Pageable pageable) {
@@ -49,7 +49,7 @@ public class NotificationController {
   }
 
   @GetMapping("/{id}")
-  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+  @PreAuthorize("hasAuthority('NOTIFICATION_VIEW')")
   @Operation(summary = "Get notification by ID (Admin only)")
   public ResponseEntity<ApiResponse<NotificationResponse>> getNotificationById(
       @PathVariable UUID id) {
@@ -81,7 +81,7 @@ public class NotificationController {
   }
 
   @DeleteMapping("/{id}")
-  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+  @PreAuthorize("hasAuthority('NOTIFICATION_DELETE')")
   @Operation(summary = "Delete a notification (Admin only)")
   public ResponseEntity<ApiResponse<Void>> deleteNotification(@PathVariable UUID id) {
     // This would need implementation in service

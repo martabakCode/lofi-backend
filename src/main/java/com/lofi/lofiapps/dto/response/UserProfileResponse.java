@@ -58,4 +58,9 @@ public class UserProfileResponse {
 
   /** Available plafond (remaining credit limit) after deducting approved/active loans */
   private BigDecimal availablePlafond;
+
+  private BigDecimal totalApprovedLoans;
+  private Boolean hasActiveLoan;
+  private Boolean pinSet;
+  private Boolean profileCompleted;
 }

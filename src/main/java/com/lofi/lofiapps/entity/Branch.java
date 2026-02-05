@@ -34,9 +34,13 @@ public class Branch extends BaseEntity {
   @Column(nullable = false)
   private String phone;
 
-  @Column(nullable = true)
-  private String longitude;
+  @Column(nullable = false)
+  @Builder.Default
+  private Boolean isHeadOffice = false;
 
-  @Column(nullable = true)
-  private String latitude;
+  @Column(precision = 11, scale = 8)
+  private java.math.BigDecimal longitude;
+
+  @Column(precision = 11, scale = 8)
+  private java.math.BigDecimal latitude;
 }

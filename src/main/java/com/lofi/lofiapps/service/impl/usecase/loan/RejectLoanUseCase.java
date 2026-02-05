@@ -1,14 +1,13 @@
 package com.lofi.lofiapps.service.impl.usecase.loan;
 
 import com.lofi.lofiapps.dto.response.LoanResponse;
-import com.lofi.lofiapps.entity.ApprovalHistory;
 import com.lofi.lofiapps.entity.Loan;
 import com.lofi.lofiapps.enums.LoanStatus;
 import com.lofi.lofiapps.exception.ResourceNotFoundException;
 import com.lofi.lofiapps.mapper.LoanDtoMapper;
-import com.lofi.lofiapps.repository.ApprovalHistoryRepository;
 import com.lofi.lofiapps.repository.LoanRepository;
 import com.lofi.lofiapps.service.NotificationService;
+import com.lofi.lofiapps.service.impl.factory.ApprovalHistoryFactory;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RejectLoanUseCase {
 
   private final LoanRepository loanRepository;
-  private final ApprovalHistoryRepository approvalHistoryRepository;
+  private final ApprovalHistoryFactory approvalHistoryFactory;
   private final NotificationService notificationService;
   private final LoanDtoMapper loanDtoMapper;
 
@@ -43,14 +42,9 @@ public class RejectLoanUseCase {
     Loan savedLoan = loanRepository.save(loan);
 
     // Save history
-    approvalHistoryRepository.save(
-        ApprovalHistory.builder()
-            .loanId(loan.getId())
-            .fromStatus(fromStatus)
-            .toStatus(toStatus)
-            .actionBy(rejectorUsername)
-            .notes(notes)
-            .build());
+    // Save history
+    approvalHistoryFactory.recordStatusChange(
+        loan.getId(), fromStatus, toStatus, rejectorUsername, notes);
 
     // Notify customer
     notificationService.notifyLoanStatusChange(loan.getCustomer().getId(), toStatus);

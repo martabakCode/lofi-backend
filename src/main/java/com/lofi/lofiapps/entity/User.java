@@ -45,6 +45,23 @@ public class User extends BaseEntity {
   @Column(nullable = true)
   private String phoneNumber;
 
+  // PIN hash for biometric authentication fallback (bcrypt, etc.)
+  @Column(nullable = true, length = 255)
+  private String pin;
+
+  @Column(nullable = false)
+  @Builder.Default
+  private Boolean pinSet = false;
+
+  // Failed login attempts for account lockout
+  @Column(nullable = false)
+  @Builder.Default
+  private Integer failedLoginAttempts = 0;
+
+  // Last failed login timestamp for lockout duration
+  @Column(nullable = true)
+  private java.time.LocalDateTime lastFailedLoginTime;
+
   @Column(name = "profile_picture_url", nullable = true)
   private String profilePictureUrl;
 
@@ -83,9 +100,9 @@ public class User extends BaseEntity {
   private Set<Role> roles = new HashSet<>();
 
   // Location coordinates (nullable)
-  @Column(precision = 10, scale = 8)
+  @Column(precision = 11, scale = 8)
   private java.math.BigDecimal longitude;
 
-  @Column(precision = 10, scale = 8)
+  @Column(precision = 11, scale = 8)
   private java.math.BigDecimal latitude;
 }

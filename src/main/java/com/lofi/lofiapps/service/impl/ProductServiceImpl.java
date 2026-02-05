@@ -33,6 +33,8 @@ public class ProductServiceImpl implements ProductService {
   private final ProductDtoMapper productDtoMapper;
   private final RecommendProductUseCase recommendProductUseCase;
 
+  private final com.lofi.lofiapps.service.ProductCalculationService productCalculationService;
+
   @Override
   @Transactional
   public ProductResponse createProduct(CreateProductRequest request) {
@@ -84,6 +86,77 @@ public class ProductServiceImpl implements ProductService {
     }
 
     return productDtoMapper.toResponse(product);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public com.lofi.lofiapps.dto.response.AvailableProductResponse getAvailableProduct(UUID userId) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId.toString()));
+
+    Product product = user.getProduct();
+    if (product == null) {
+      throw new IllegalArgumentException("No product assigned to user");
+    }
+
+    return mapToAvailableProductResponse(user, product);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<com.lofi.lofiapps.dto.response.AvailableProductResponse> getAllAvailableProducts(
+      UUID userId) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId.toString()));
+
+    List<Product> activeProducts = productRepository.findByIsActiveTrue();
+
+    return activeProducts.stream()
+        .map(product -> mapToAvailableProductResponse(user, product))
+        .collect(Collectors.toList());
+  }
+
+  private com.lofi.lofiapps.dto.response.AvailableProductResponse mapToAvailableProductResponse(
+      User user, Product product) {
+
+    java.math.BigDecimal availableAmount =
+        productCalculationService.calculateAvailableAmount(user.getId(), product.getId());
+    boolean hasSubmittedLoan = productCalculationService.hasActiveLoan(user.getId());
+
+    java.math.BigDecimal approvedLoanAmount = java.math.BigDecimal.ZERO;
+    com.lofi.lofiapps.enums.LoanStatus lastLoanStatus = null;
+    java.time.LocalDateTime lastLoanSubmittedAt = null;
+
+    java.util.List<com.lofi.lofiapps.entity.Loan> loans =
+        productCalculationService.getActiveLoans(user.getId());
+    if (!loans.isEmpty()) {
+      approvedLoanAmount =
+          loans.stream()
+              .map(com.lofi.lofiapps.entity.Loan::getLoanAmount)
+              .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+      // Assuming list is ordered by recency or just taking first as "last" relevant
+      // one for status
+      // display
+      // Ideally query should order by date desc
+      lastLoanStatus = loans.get(0).getLoanStatus();
+      lastLoanSubmittedAt = loans.get(0).getSubmittedAt();
+    }
+
+    return com.lofi.lofiapps.dto.response.AvailableProductResponse.builder()
+        .productId(product.getId())
+        .productCode(product.getProductCode())
+        .productName(product.getProductName())
+        .productLimit(product.getMaxLoanAmount())
+        .approvedLoanAmount(approvedLoanAmount)
+        .availableAmount(availableAmount)
+        .hasSubmittedLoan(hasSubmittedLoan)
+        .lastLoanStatus(lastLoanStatus)
+        .lastLoanSubmittedAt(lastLoanSubmittedAt)
+        .build();
   }
 
   @Override

@@ -7,19 +7,21 @@ import com.lofi.lofiapps.entity.Product;
 import com.lofi.lofiapps.entity.User;
 import com.lofi.lofiapps.entity.UserBiodata;
 import com.lofi.lofiapps.enums.ApprovalStage;
+import com.lofi.lofiapps.enums.JobType;
 import com.lofi.lofiapps.enums.LoanStatus;
 import com.lofi.lofiapps.enums.UserStatus;
 import com.lofi.lofiapps.mapper.LoanDtoMapper;
 import com.lofi.lofiapps.repository.LoanRepository;
-import com.lofi.lofiapps.repository.ProductRepository;
 import com.lofi.lofiapps.repository.UserBiodataRepository;
 import com.lofi.lofiapps.repository.UserRepository;
+import com.lofi.lofiapps.service.NotificationService;
 import com.lofi.lofiapps.service.impl.calculator.PlafondCalculator;
 import com.lofi.lofiapps.service.impl.factory.ApprovalHistoryFactory;
 import com.lofi.lofiapps.service.impl.validator.RiskValidator;
 import com.lofi.lofiapps.service.impl.validator.UserBiodataValidator;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -34,13 +36,15 @@ public class ApplyLoanUseCase {
 
   private final LoanRepository loanRepository;
   private final UserRepository userRepository;
-  private final ProductRepository productRepository;
+
   private final UserBiodataRepository userBiodataRepository;
   private final LoanDtoMapper loanDtoMapper;
   private final UserBiodataValidator userBiodataValidator;
   private final RiskValidator riskValidator;
   private final PlafondCalculator plafondCalculator;
   private final ApprovalHistoryFactory approvalHistoryFactory;
+  private final NotificationService notificationService;
+  private final com.lofi.lofiapps.service.impl.usecase.pin.ValidatePinUseCase validatePinUseCase;
 
   @Transactional
   public LoanResponse execute(LoanRequest request, UUID userId, String username) {
@@ -55,6 +59,10 @@ public class ApplyLoanUseCase {
 
     if (user.getStatus() != UserStatus.ACTIVE) {
       throw new IllegalStateException("User is not active");
+    }
+
+    if (!Boolean.TRUE.equals(user.getPinSet())) {
+      throw new IllegalStateException("Please set your PIN before applying for a loan");
     }
 
     if (!Boolean.TRUE.equals(user.getProfileCompleted())) {
@@ -106,17 +114,28 @@ public class ApplyLoanUseCase {
     // Validate age requirements
     validateAgeRequirements(ageAtCompletion, request.getJobType());
 
-    // Create Draft Loan
+    // Validate PIN if provided
+    boolean pinValidated = false;
+    if (request.getPin() != null && !request.getPin().isEmpty()) {
+      validatePinUseCase.execute(
+          request.getPin(), userId, null); // passing null for IP address for now as it's
+      // optional/not readily available here without extra
+      // work
+      pinValidated = true;
+    }
+
+    // Create Loan with SUBMITTED status (direct submit)
     Loan loan =
         Loan.builder()
             .loanAmount(request.getLoanAmount())
             .tenor(request.getTenor())
-            .loanStatus(LoanStatus.DRAFT)
-            .currentStage(ApprovalStage.CUSTOMER)
+            .loanStatus(LoanStatus.SUBMITTED)
+            .currentStage(ApprovalStage.MARKETING)
             .customer(user)
             .product(product)
             .branch(user.getBranch())
-            .submittedAt(null) // Not submitted yet
+            .submittedAt(LocalDateTime.now())
+            .lastStatusChangedAt(LocalDateTime.now())
             .longitude(request.getLongitude())
             .latitude(request.getLatitude())
             .declaredIncome(request.getDeclaredIncome())
@@ -141,6 +160,7 @@ public class ApplyLoanUseCase {
             // Snapshot product rates at loan creation
             .interestRate(product.getInterestRate())
             .adminFee(product.getAdminFee())
+            .pinValidated(pinValidated)
             .build();
 
     // Update user biodata with new fields and age info
@@ -148,9 +168,12 @@ public class ApplyLoanUseCase {
 
     Loan savedLoan = loanRepository.save(loan);
 
-    // Save history using factory
+    // Save history using factory - record as SUBMITTED (not DRAFT)
     approvalHistoryFactory.recordStatusChange(
-        savedLoan.getId(), null, LoanStatus.DRAFT, username, "Loan application created");
+        savedLoan.getId(), null, LoanStatus.SUBMITTED, username, "Loan application submitted");
+
+    // Send notification
+    notificationService.notifyLoanStatusChange(user.getId(), LoanStatus.SUBMITTED);
 
     return loanDtoMapper.toResponse(savedLoan);
   }
@@ -166,8 +189,7 @@ public class ApplyLoanUseCase {
     return Period.between(dateOfBirth, completionDate).getYears();
   }
 
-  private void validateAgeRequirements(
-      int ageAtCompletion, com.lofi.lofiapps.enums.JobType jobType) {
+  private void validateAgeRequirements(int ageAtCompletion, JobType jobType) {
     // Minimum age: 21 years
     int currentAge = calculateAge(LocalDate.now().minusYears(ageAtCompletion));
     if (currentAge < 21) {
@@ -177,7 +199,7 @@ public class ApplyLoanUseCase {
 
     // Maximum age depends on job type
     int maxAge;
-    if (jobType == com.lofi.lofiapps.enums.JobType.WIRASWASTA) {
+    if (jobType == JobType.WIRASWASTA) {
       maxAge = 65; // Wirausaha: 60-65
     } else {
       maxAge = 60; // Karyawan/Profesional: 55-60

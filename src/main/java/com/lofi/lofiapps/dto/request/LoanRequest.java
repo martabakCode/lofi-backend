@@ -3,9 +3,15 @@ package com.lofi.lofiapps.dto.request;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class LoanRequest {
   @NotNull(message = "Loan Amount is required")
   @Positive
@@ -48,4 +54,11 @@ public class LoanRequest {
   private String bankBranch;
   private String accountNumber;
   private String accountHolderName;
+
+  /**
+   * Optional PIN for validation before loan submission. If provided, PIN will be validated. If not
+   * provided, loan will proceed without PIN validation.
+   */
+  @jakarta.validation.constraints.Pattern(regexp = "^\\d{4,6}$", message = "PIN must be 4-6 digits")
+  private String pin;
 }

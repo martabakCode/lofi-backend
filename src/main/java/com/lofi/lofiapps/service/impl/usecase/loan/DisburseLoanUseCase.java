@@ -1,14 +1,13 @@
 package com.lofi.lofiapps.service.impl.usecase.loan;
 
 import com.lofi.lofiapps.dto.response.LoanResponse;
-import com.lofi.lofiapps.entity.ApprovalHistory;
 import com.lofi.lofiapps.entity.Loan;
 import com.lofi.lofiapps.enums.LoanStatus;
 import com.lofi.lofiapps.exception.ResourceNotFoundException;
 import com.lofi.lofiapps.mapper.LoanDtoMapper;
-import com.lofi.lofiapps.repository.ApprovalHistoryRepository;
 import com.lofi.lofiapps.repository.LoanRepository;
 import com.lofi.lofiapps.service.NotificationService;
+import com.lofi.lofiapps.service.impl.factory.ApprovalHistoryFactory;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class DisburseLoanUseCase {
 
   private final LoanRepository loanRepository;
-  private final ApprovalHistoryRepository approvalHistoryRepository;
+  private final ApprovalHistoryFactory approvalHistoryFactory;
   private final NotificationService notificationService;
   private final LoanDtoMapper loanDtoMapper;
 
@@ -54,22 +53,20 @@ public class DisburseLoanUseCase {
     Loan savedLoan = loanRepository.save(loan);
 
     // Save history
-    approvalHistoryRepository.save(
-        ApprovalHistory.builder()
-            .loanId(loan.getId())
-            .fromStatus(fromStatus)
-            .toStatus(LoanStatus.DISBURSED)
-            .actionBy(officerUsername)
-            .notes("Loan disbursed with reference: " + notes)
-            .build());
+    // Save history
+    approvalHistoryFactory.recordStatusChange(
+        loan.getId(),
+        fromStatus,
+        LoanStatus.DISBURSED,
+        officerUsername,
+        "Loan disbursed with reference: " + notes);
 
     // Notify customer
     try {
-      if (loan.getCustomer() != null && loan.getCustomer().getId() != null) {
-        notificationService.notifyLoanStatusChange(
-            loan.getCustomer().getId(), LoanStatus.DISBURSED);
+      if (loan.getCustomer() != null) {
+        notificationService.notifyLoanDisbursement(savedLoan);
       } else {
-        log.warn("Loan {} disbursed but no customer associated or customer ID is null", loanId);
+        log.warn("Loan {} disbursed but no customer associated", loanId);
       }
     } catch (Exception e) {
       log.error("Failed to notify customer for loan disbursement {}: {}", loanId, e.getMessage());

@@ -44,6 +44,22 @@ public class GlobalExceptionHandler {
     return null;
   }
 
+  @ExceptionHandler(PinValidationException.class)
+  public ResponseEntity<ApiResponse<Object>> handlePinValidationException(
+      PinValidationException ex) {
+    log.error("PIN validation error: {} - {}", ex.getErrorCode(), ex.getMessage());
+
+    HttpStatus status = HttpStatus.BAD_REQUEST;
+    if ("PIN_VALIDATION_RATE_LIMITED".equals(ex.getErrorCode())) {
+      status = HttpStatus.TOO_MANY_REQUESTS;
+    } else if ("PIN_VALIDATION_BLOCKED".equals(ex.getErrorCode())) {
+      status = HttpStatus.FORBIDDEN;
+    }
+
+    return ResponseEntity.status(status)
+        .body(ApiResponse.error(ex.getErrorCode(), ex.getMessage(), getDebugError(ex)));
+  }
+
   @ExceptionHandler(ResourceNotFoundException.class)
   public ResponseEntity<ApiResponse<Object>> handleResourceNotFoundException(
       ResourceNotFoundException ex) {

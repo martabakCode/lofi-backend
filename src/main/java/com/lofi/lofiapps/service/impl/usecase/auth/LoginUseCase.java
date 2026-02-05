@@ -20,6 +20,7 @@ public class LoginUseCase {
   private final JwtUtils jwtUtils;
   private final RefreshTokenRepository refreshTokenRepository;
   private final UserRepository userRepository;
+  private final com.lofi.lofiapps.service.ProductCalculationService productCalculationService;
 
   public LoginResponse execute(LoginRequest request) {
     Authentication authentication =
@@ -48,12 +49,36 @@ public class LoginUseCase {
     refreshTokenRepository.save(refreshToken);
 
     // Update FCM Token if present
+    com.lofi.lofiapps.entity.User user =
+        userRepository.findById(userPrincipal.getId()).orElse(null);
     if (request.getFcmToken() != null && !request.getFcmToken().isEmpty()) {
-      com.lofi.lofiapps.entity.User user =
-          userRepository.findById(userPrincipal.getId()).orElse(null);
       if (user != null) {
         user.setFirebaseToken(request.getFcmToken());
         userRepository.save(user);
+      }
+    }
+
+    // Calculate product availability and loan status
+    java.math.BigDecimal availableLimit = java.math.BigDecimal.ZERO;
+    java.math.BigDecimal activeLoanAmount = java.math.BigDecimal.ZERO;
+    com.lofi.lofiapps.enums.LoanStatus activeLoanStatus = null;
+    boolean hasSubmittedLoan = false;
+
+    if (user != null && user.getProduct() != null) {
+      availableLimit =
+          productCalculationService.calculateAvailableAmount(
+              user.getId(), user.getProduct().getId());
+      hasSubmittedLoan = productCalculationService.hasActiveLoan(user.getId());
+
+      java.util.List<com.lofi.lofiapps.entity.Loan> activeLoans =
+          productCalculationService.getActiveLoans(user.getId());
+      if (!activeLoans.isEmpty()) {
+        activeLoanStatus =
+            activeLoans.get(0).getLoanStatus(); // Assuming most relevant is first or only one
+        activeLoanAmount =
+            activeLoans.stream()
+                .map(com.lofi.lofiapps.entity.Loan::getLoanAmount)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
       }
     }
 
@@ -62,6 +87,12 @@ public class LoginUseCase {
         .refreshToken(refreshTokenStr)
         .expiresIn(expiration / 1000) // Seconds
         .tokenType("Bearer")
+        .pinSet(user != null ? user.getPinSet() : false)
+        .profileCompleted(user != null ? user.getProfileCompleted() : false)
+        .hasSubmittedLoan(hasSubmittedLoan)
+        .activeLoanStatus(activeLoanStatus)
+        .activeLoanAmount(activeLoanAmount)
+        .availableProductLimit(availableLimit)
         .build();
   }
 }

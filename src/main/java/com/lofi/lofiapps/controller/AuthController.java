@@ -29,6 +29,20 @@ public class AuthController {
     return ResponseEntity.ok(ApiResponse.success(authService.login(request), "Login success"));
   }
 
+  @PostMapping("/pin-login")
+  @Operation(summary = "Login with PIN")
+  public ResponseEntity<ApiResponse<LoginResponse>> pinLogin(
+      @Valid @RequestBody PinLoginRequest request) {
+    return ResponseEntity.ok(ApiResponse.success(authService.pinLogin(request), "Login success"));
+  }
+
+  @PostMapping("/pin-reset")
+  @Operation(summary = "Reset PIN via email")
+  public ResponseEntity<ApiResponse<Object>> pinReset(@Valid @RequestBody PinResetRequest request) {
+    authService.pinReset(request);
+    return ResponseEntity.ok(ApiResponse.success(null, "If email exists, new PIN will be sent"));
+  }
+
   @PostMapping("/register")
   @Operation(summary = "Register a new customer")
   public ResponseEntity<ApiResponse<LoginResponse>> register(

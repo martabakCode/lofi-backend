@@ -35,6 +35,9 @@ public class UserServiceImpl implements UserService {
   private final GetProfilePhotoUseCase getProfilePhotoUseCase;
   private final com.lofi.lofiapps.service.impl.usecase.user.UpdateProfilePictureUseCase
       updateProfilePictureUseCase;
+  private final com.lofi.lofiapps.service.impl.usecase.user.UpdatePinUseCase updatePinUseCase;
+  private final com.lofi.lofiapps.service.impl.usecase.user.SetPinUseCase setPinUseCase;
+  private final com.lofi.lofiapps.service.impl.usecase.user.IsPinSetUseCase isPinSetUseCase;
 
   @Override
   public UserSummaryResponse createUser(CreateUserRequest request) {
@@ -93,6 +96,27 @@ public class UserServiceImpl implements UserService {
   @Override
   public byte[] getProfilePhoto(UUID userId) {
     return getProfilePhotoUseCase.execute(userId);
+  }
+
+  @Override
+  public void updatePin(com.lofi.lofiapps.dto.request.UpdatePinRequest request) {
+    Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    if (!(principal instanceof UserPrincipal)) {
+      throw new RuntimeException("Unauthenticated");
+    }
+
+    UUID userId = ((UserPrincipal) principal).getId();
+    updatePinUseCase.execute(userId, request);
+  }
+
+  @Override
+  public void setPin(UUID userId, com.lofi.lofiapps.dto.request.SetPinRequest request) {
+    setPinUseCase.execute(userId, request);
+  }
+
+  @Override
+  public boolean isPinSet(UUID userId) {
+    return isPinSetUseCase.execute(userId);
   }
 
   @Override

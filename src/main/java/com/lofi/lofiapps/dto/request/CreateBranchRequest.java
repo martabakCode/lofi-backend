@@ -29,6 +29,6 @@ public class CreateBranchRequest {
   @NotBlank(message = "Phone is required")
   private String phone;
 
-  private String longitude;
-  private String latitude;
+  private java.math.BigDecimal longitude;
+  private java.math.BigDecimal latitude;
 }

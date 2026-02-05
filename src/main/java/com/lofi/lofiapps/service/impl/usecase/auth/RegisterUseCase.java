@@ -44,6 +44,11 @@ public class RegisterUseCase {
                             .description("Default customer role")
                             .build()));
 
+    // Generate random 6-digit PIN
+    java.util.Random random = new java.util.Random();
+    String pin = String.valueOf(100000 + random.nextInt(900000));
+    String encryptedPin = passwordEncoder.encode(pin);
+
     User user =
         User.builder()
             .fullName(request.getFullName())
@@ -51,6 +56,7 @@ public class RegisterUseCase {
             .email(request.getEmail())
             .password(passwordEncoder.encode(request.getPassword()))
             .phoneNumber(request.getPhoneNumber())
+            .pin(encryptedPin)
             .status(UserStatus.ACTIVE)
             .roles(new HashSet<>(Collections.singletonList(customerRole)))
             .build();

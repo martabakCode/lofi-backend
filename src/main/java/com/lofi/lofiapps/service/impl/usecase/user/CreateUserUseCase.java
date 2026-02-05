@@ -40,15 +40,23 @@ public class CreateUserUseCase {
                           "Branch not found with id: " + request.getBranchId()));
     }
 
+    // Generate random 6-digit PIN
+    java.util.Random random = new java.util.Random();
+    String pin = String.valueOf(100000 + random.nextInt(900000));
+    String encryptedPin = passwordEncoder.encode(pin);
+
     User user =
         User.builder()
             .fullName(request.getFullName())
             .email(request.getEmail())
             .username(request.getEmail())
             .password(passwordEncoder.encode("password123")) // Default password
+            .pin(encryptedPin)
             .status(UserStatus.ACTIVE)
             .branch(branch)
             .build();
+
+    log.info("Created user: {} with PIN: {}", user.getEmail(), pin);
 
     User savedUser = userRepository.save(user);
 

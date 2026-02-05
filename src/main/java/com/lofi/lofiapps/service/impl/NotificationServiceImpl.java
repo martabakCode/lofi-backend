@@ -26,28 +26,46 @@ public class NotificationServiceImpl implements NotificationService {
   private final FirebaseMessaging firebaseMessaging;
   private final NotificationRepository notificationRepository;
   private final UserRepository userRepository;
+  private final org.thymeleaf.TemplateEngine templateEngine;
 
   @Value("${spring.mail.username}")
   private String senderEmail;
 
+  @Value("${app.frontend.url:http://localhost:4200}")
+  private String frontendUrl;
+
   @Override
   public void sendEmail(String to, String subject, String body) {
     try {
-      SimpleMailMessage message = new SimpleMailMessage();
-      // Ensure we have a valid from address, falling back if property is not set or
-      // empty
-      String from =
-          (senderEmail != null && !senderEmail.isEmpty()) ? senderEmail : "noreply@lofi.com";
-      message.setFrom(from);
-      message.setTo(to);
-      message.setSubject(subject);
-      message.setText(body);
-      javaMailSender.send(message);
+      // Check if body contains HTML tags to decide format
+      boolean isHtml = body.trim().startsWith("<html") || body.contains("</body>");
+
+      if (isHtml) {
+        jakarta.mail.internet.MimeMessage message = javaMailSender.createMimeMessage();
+        org.springframework.mail.javamail.MimeMessageHelper helper =
+            new org.springframework.mail.javamail.MimeMessageHelper(message, true, "UTF-8");
+
+        String from =
+            (senderEmail != null && !senderEmail.isEmpty()) ? senderEmail : "noreply@lofi.com";
+        helper.setFrom(from);
+        helper.setTo(to);
+        helper.setSubject(subject);
+        helper.setText(body, true);
+
+        javaMailSender.send(message);
+      } else {
+        SimpleMailMessage message = new SimpleMailMessage();
+        String from =
+            (senderEmail != null && !senderEmail.isEmpty()) ? senderEmail : "noreply@lofi.com";
+        message.setFrom(from);
+        message.setTo(to);
+        message.setSubject(subject);
+        message.setText(body);
+        javaMailSender.send(message);
+      }
       log.info("Email sent successfully to {}", to);
     } catch (Exception e) {
       log.error("Failed to send email to {}: {}", to, e.getMessage());
-      // We don't throw exception here to avoid blocking main flow if notification
-      // fails
     }
   }
 
@@ -141,8 +159,156 @@ public class NotificationServiceImpl implements NotificationService {
         title,
         message,
         com.lofi.lofiapps.enums.NotificationType.LOAN,
+        null, // TODO: Pass Loan ID if available - resolved via specific method for
+        // disbursement
+        null);
+
+    // 2. Push Notification
+    if (user.getFirebaseToken() != null && !user.getFirebaseToken().isEmpty()) {
+      sendPushNotification(user.getFirebaseToken(), title, message);
+    }
+
+    // 3. Email Notification
+    // For DISBURSED status, we refer to use notifyLoanDisbursement specifically if
+    // Loan object is available
+    // Otherwise fallback to text email
+    sendEmail(user.getEmail(), title, message);
+  }
+
+  @Override
+  public void notifyLoanDisbursement(com.lofi.lofiapps.entity.Loan loan) {
+    if (loan == null || loan.getCustomer() == null) {
+      return;
+    }
+
+    User user = loan.getCustomer();
+    String title = "Loan Disbursed Successfully!";
+
+    // In-App Notification
+    sendInAppNotification(
+        user.getId(),
+        title,
+        "Funds are on their way. Amount: " + loan.getLoanAmount(),
+        com.lofi.lofiapps.enums.NotificationType.LOAN,
+        loan.getId(),
+        "/loans/" + loan.getId());
+
+    // Push Notification
+    if (user.getFirebaseToken() != null && !user.getFirebaseToken().isEmpty()) {
+      sendPushNotification(
+          user.getFirebaseToken(),
+          title,
+          "Your loan of " + loan.getLoanAmount() + " has been disbursed.");
+    }
+
+    // HTML Email
+    try {
+      org.thymeleaf.context.Context context = new org.thymeleaf.context.Context();
+      context.setVariable(
+          "amount", com.lofi.lofiapps.util.CurrencyUtil.formatRupiah(loan.getLoanAmount()));
+      context.setVariable(
+          "referenceId",
+          loan.getDisbursementReference() != null
+              ? loan.getDisbursementReference()
+              : loan.getId().toString());
+      context.setVariable("bankName", loan.getBankName());
+      context.setVariable("accountNumber", maskAccountNumber(loan.getAccountNumber()));
+      context.setVariable("dashboardUrl", frontendUrl + "/loans/" + loan.getId());
+
+      String body = templateEngine.process("email/disbursement-success", context);
+      sendEmail(user.getEmail(), title, body);
+    } catch (Exception e) {
+      log.error("Failed to prepare disbursement email: {}", e.getMessage());
+      // Fallback
+      sendEmail(user.getEmail(), title, "Your loan has been disbursed.");
+    }
+  }
+
+  @Override
+  public void notifyForgotPassword(String email, String token) {
+    String subject = "Password Reset Request";
+    String resetUrl = frontendUrl + "/reset-password?token=" + token;
+
+    try {
+      org.thymeleaf.context.Context context = new org.thymeleaf.context.Context();
+      context.setVariable("resetUrl", resetUrl);
+
+      String body = templateEngine.process("email/forgot-password", context);
+      sendEmail(email, subject, body);
+    } catch (Exception e) {
+      log.error("Failed to prepare password reset email: {}", e.getMessage());
+      // Fallback
+      String body =
+          "You have requested to reset your password. Use the following link: "
+              + resetUrl
+              + "\n\nIf you did not request this, please ignore this email.";
+      sendEmail(email, subject, body);
+    }
+  }
+
+  @Override
+  public void notifyPasswordResetSuccess(String email) {
+    String subject = "Password Reset Successful";
+    String loginUrl = frontendUrl + "/login";
+
+    try {
+      org.thymeleaf.context.Context context = new org.thymeleaf.context.Context();
+      context.setVariable("loginUrl", loginUrl);
+
+      String body = templateEngine.process("email/change-password-success", context);
+      sendEmail(email, subject, body);
+    } catch (Exception e) {
+      log.error("Failed to prepare password reset success email: {}", e.getMessage());
+      String body =
+          "Your password has been successfully reset. You can now login with your new password.";
+      sendEmail(email, subject, body);
+    }
+  }
+
+  @Override
+  public void notifyPinReset(String email, String newPin) {
+    String subject = "PIN Reset Notification";
+    try {
+      org.thymeleaf.context.Context context = new org.thymeleaf.context.Context();
+      context.setVariable("newPin", newPin);
+      context.setVariable("loginUrl", frontendUrl + "/login");
+
+      // We can use a simple template or reuse change-password-success if it fits,
+      // but ideally we should have a specific one. For now, let's use a simple body
+      // or check if there's a pin-reset template.
+      // String body = templateEngine.process("email/pin-reset", context);
+
+      String body =
+          "Your PIN has been reset successfully. Your new PIN is: "
+              + newPin
+              + "\n\nPlease login and change your PIN immediately for security.";
+      sendEmail(email, subject, body);
+    } catch (Exception e) {
+      log.error("Failed to send PIN reset email: {}", e.getMessage());
+    }
+  }
+
+  @Override
+  @Transactional
+  public void notifyPinRequired(UUID userId) {
+    User user = userRepository.findById(userId).orElse(null);
+    if (user == null) {
+      log.warn("User not found for ID: {}, cannot send PIN required notification", userId);
+      return;
+    }
+
+    String title = "PIN Setup Required";
+    String message =
+        "Please set your transaction PIN to secure your account and proceed with loan applications.";
+
+    // 1. In-App Notification
+    sendInAppNotification(
+        userId,
+        title,
+        message,
+        com.lofi.lofiapps.enums.NotificationType.SYSTEM,
         null,
-        null); // TODO: Pass Loan ID if available
+        "/profile/security");
 
     // 2. Push Notification
     if (user.getFirebaseToken() != null && !user.getFirebaseToken().isEmpty()) {
@@ -151,26 +317,6 @@ public class NotificationServiceImpl implements NotificationService {
 
     // 3. Email Notification
     sendEmail(user.getEmail(), title, message);
-  }
-
-  @Override
-  public void notifyForgotPassword(String email, String token) {
-    String subject = "Password Reset Request";
-    String body =
-        "You have requested to reset your password. Use the following token: "
-            + token
-            + "\n\nIf you did not request this, please ignore this email.";
-
-    sendEmail(email, subject, body);
-  }
-
-  @Override
-  public void notifyPasswordResetSuccess(String email) {
-    String subject = "Password Reset Successful";
-    String body =
-        "Your password has been successfully reset. You can now login with your new password.";
-
-    sendEmail(email, subject, body);
   }
 
   @Override
@@ -201,5 +347,10 @@ public class NotificationServiceImpl implements NotificationService {
       notification.setIsRead(true);
       notificationRepository.save(notification);
     }
+  }
+
+  private String maskAccountNumber(String accountNumber) {
+    if (accountNumber == null || accountNumber.length() < 4) return "****";
+    return "**** " + accountNumber.substring(accountNumber.length() - 4);
   }
 }

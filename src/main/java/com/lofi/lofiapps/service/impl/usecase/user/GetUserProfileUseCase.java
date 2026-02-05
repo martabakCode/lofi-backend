@@ -4,9 +4,7 @@ import com.lofi.lofiapps.dto.response.UserProfileResponse;
 import com.lofi.lofiapps.dto.response.UserProfileResponse.BiodataInfo;
 import com.lofi.lofiapps.dto.response.UserProfileResponse.BranchInfo;
 import com.lofi.lofiapps.entity.User;
-import com.lofi.lofiapps.enums.LoanStatus;
 import com.lofi.lofiapps.exception.ResourceNotFoundException;
-import com.lofi.lofiapps.repository.LoanRepository;
 import com.lofi.lofiapps.repository.UserRepository;
 import com.lofi.lofiapps.service.impl.usecase.storage.R2StorageService;
 import java.math.BigDecimal;
@@ -20,8 +18,8 @@ import org.springframework.stereotype.Component;
 public class GetUserProfileUseCase {
 
   private final UserRepository userRepository;
-  private final LoanRepository loanRepository;
   private final R2StorageService storageService;
+  private final com.lofi.lofiapps.service.ProductCalculationService productCalculationService;
 
   @Value("${app.storage.bucket-name:lofi-bucket}")
   private String bucketName;
@@ -41,6 +39,19 @@ public class GetUserProfileUseCase {
         && !profilePictureUrl.startsWith("http")) {
       profilePictureUrl =
           storageService.generatePresignedDownloadUrl(bucketName, profilePictureUrl, 60).toString();
+    }
+
+    BigDecimal availablePlafond = BigDecimal.ZERO;
+    BigDecimal totalApprovedLoans = BigDecimal.ZERO;
+    Boolean hasActiveLoan = false;
+
+    if (user.getProduct() != null) {
+      availablePlafond =
+          productCalculationService.calculateAvailableAmount(
+              user.getId(), user.getProduct().getId());
+      hasActiveLoan = productCalculationService.hasActiveLoan(user.getId());
+
+      totalApprovedLoans = productCalculationService.calculateTotalApprovedLoanAmount(user.getId());
     }
 
     return UserProfileResponse.builder()
@@ -90,35 +101,11 @@ public class GetUserProfileUseCase {
                     .adminFee(user.getProduct().getAdminFee())
                     .build()
                 : null)
-        .availablePlafond(calculateAvailablePlafond(user))
+        .availablePlafond(availablePlafond)
+        .totalApprovedLoans(totalApprovedLoans)
+        .hasActiveLoan(hasActiveLoan)
+        .pinSet(user.getPinSet())
+        .profileCompleted(user.getProfileCompleted())
         .build();
-  }
-
-  /**
-   * Calculates the available plafond (remaining credit limit) for a user. Formula: Product
-   * maxLoanAmount - Sum of all APPROVED/DISBURSED/COMPLETED loans
-   */
-  private BigDecimal calculateAvailablePlafond(User user) {
-    if (user.getProduct() == null) {
-      return BigDecimal.ZERO;
-    }
-
-    BigDecimal maxPlafond = user.getProduct().getMaxLoanAmount();
-
-    // Calculate total of active/approved loans
-    BigDecimal usedPlafond =
-        loanRepository.findByCustomerId(user.getId()).stream()
-            .filter(
-                loan ->
-                    loan.getLoanStatus() == LoanStatus.APPROVED
-                        || loan.getLoanStatus() == LoanStatus.DISBURSED
-                        || loan.getLoanStatus() == LoanStatus.COMPLETED)
-            .map(loan -> loan.getLoanAmount() != null ? loan.getLoanAmount() : BigDecimal.ZERO)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-    BigDecimal availablePlafond = maxPlafond.subtract(usedPlafond);
-
-    // Ensure not negative
-    return availablePlafond.compareTo(BigDecimal.ZERO) > 0 ? availablePlafond : BigDecimal.ZERO;
   }
 }

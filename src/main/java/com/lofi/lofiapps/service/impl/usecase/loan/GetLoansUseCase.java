@@ -1,13 +1,13 @@
 package com.lofi.lofiapps.service.impl.usecase.loan;
 
 import com.lofi.lofiapps.dto.request.LoanCriteria;
-import com.lofi.lofiapps.dto.response.DocumentResponse;
 import com.lofi.lofiapps.dto.response.LoanResponse;
 import com.lofi.lofiapps.dto.response.PagedResponse;
 import com.lofi.lofiapps.entity.Loan;
 import com.lofi.lofiapps.mapper.LoanDtoMapper;
 import com.lofi.lofiapps.repository.DocumentRepository;
 import com.lofi.lofiapps.repository.LoanRepository;
+import com.lofi.lofiapps.service.impl.mapper.DocumentMapper;
 import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +28,7 @@ public class GetLoansUseCase {
   private final LoanDtoMapper loanDtoMapper;
   private final DocumentRepository documentRepository;
   private final AnalyzeLoanUseCase analyzeLoanUseCase;
+  private final DocumentMapper documentMapper;
 
   public PagedResponse<LoanResponse> execute(LoanCriteria criteria, Pageable pageable) {
     Specification<Loan> spec =
@@ -42,6 +43,10 @@ public class GetLoansUseCase {
           if (criteria.getBranchId() != null) {
             predicates.add(cb.equal(root.get("branch").get("id"), criteria.getBranchId()));
           }
+          // Exclude specific statuses (e.g., DRAFT and CANCELLED for active loans)
+          if (criteria.getExcludeStatuses() != null && !criteria.getExcludeStatuses().isEmpty()) {
+            predicates.add(root.get("loanStatus").in(criteria.getExcludeStatuses()).not());
+          }
           return cb.and(predicates.toArray(new Predicate[0]));
         };
 
@@ -55,14 +60,7 @@ public class GetLoansUseCase {
                   // Populate documents
                   resp.setDocuments(
                       documentRepository.findByLoanId(loan.getId()).stream()
-                          .map(
-                              doc ->
-                                  DocumentResponse.builder()
-                                      .id(doc.getId())
-                                      .fileName(doc.getFileName())
-                                      .documentType(doc.getDocumentType())
-                                      .uploadedAt(doc.getCreatedAt())
-                                      .build())
+                          .map(documentMapper::toResponse)
                           .collect(Collectors.toList()));
                   // Populate AI Analysis
                   resp.setAiAnalysis(analyzeLoanUseCase.execute(loan.getId()));

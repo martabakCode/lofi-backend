@@ -9,6 +9,13 @@ import com.lofi.lofiapps.enums.RoleName;
 import com.lofi.lofiapps.enums.UserStatus;
 import com.lofi.lofiapps.mapper.LoanDtoMapper;
 import com.lofi.lofiapps.repository.*;
+import com.lofi.lofiapps.service.NotificationService;
+import com.lofi.lofiapps.service.impl.calculator.PlafondCalculator;
+import com.lofi.lofiapps.service.impl.factory.ApprovalHistoryFactory;
+import com.lofi.lofiapps.service.impl.validator.RiskValidator;
+import com.lofi.lofiapps.service.impl.validator.UserBiodataValidator;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.Set;
@@ -28,9 +35,14 @@ public class MarketingApplyLoanUseCase {
   private final BranchRepository branchRepository;
   private final ProductRepository productRepository;
   private final LoanRepository loanRepository;
-  private final ApprovalHistoryRepository approvalHistoryRepository;
+  private final ApprovalHistoryFactory approvalHistoryFactory;
   private final LoanDtoMapper loanDtoMapper;
   private final PasswordEncoder passwordEncoder;
+  private final UserBiodataValidator userBiodataValidator;
+  private final RiskValidator riskValidator;
+  private final PlafondCalculator plafondCalculator;
+  private final NotificationService notificationService;
+  private final com.lofi.lofiapps.service.impl.usecase.pin.ValidatePinUseCase validatePinUseCase;
 
   @Transactional
   public LoanResponse execute(MarketingApplyLoanRequest request, String marketingUsername) {
@@ -79,6 +91,17 @@ public class MarketingApplyLoanUseCase {
       user.setProfileCompleted(true);
     }
 
+    if (!Boolean.TRUE.equals(user.getPinSet())) {
+      throw new IllegalStateException("Customer must set their PIN before applying for a loan");
+    }
+
+    // Validate PIN if provided
+    boolean pinValidated = false;
+    if (request.getPin() != null && !request.getPin().isEmpty()) {
+      validatePinUseCase.execute(request.getPin(), user.getId(), null);
+      pinValidated = true;
+    }
+
     // Check if user already has a product assigned
     if (user.getProduct() != null) {
       throw new IllegalStateException(
@@ -110,7 +133,7 @@ public class MarketingApplyLoanUseCase {
     biodata.setOccupation(request.getOccupation());
 
     // Validate biodata completeness
-    validateUserBiodataComplete(biodata);
+    userBiodataValidator.validateComplete(biodata);
 
     // 2.5 Assign lowest product to user if not assigned
     if (user.getProduct() == null) {
@@ -119,7 +142,7 @@ public class MarketingApplyLoanUseCase {
 
     user = userRepository.save(user);
 
-    // 3. Create Loan
+    // 3. Create Loan with SUBMITTED status (direct submit)
     Product product =
         productRepository
             .findById(request.getProductId())
@@ -138,19 +161,30 @@ public class MarketingApplyLoanUseCase {
       throw new IllegalArgumentException("Tenor exceeds maximum: " + product.getMaxTenor());
     }
 
+    // Validate against available plafond (reserve on SUBMITTED)
+    BigDecimal availablePlafond = plafondCalculator.calculateAvailablePlafond(user, product);
+    if (request.getLoanAmount().compareTo(availablePlafond) > 0) {
+      throw new IllegalArgumentException(
+          "Loan amount exceeds available plafond. Available: "
+              + availablePlafond
+              + ", Requested: "
+              + request.getLoanAmount());
+    }
+
     // Risk Condition Check
-    validateRiskConditions(user, biodata, request);
+    riskValidator.validate(user, biodata, request.getLoanAmount());
 
     Loan loan =
         Loan.builder()
             .loanAmount(request.getLoanAmount())
             .tenor(request.getTenor())
-            .loanStatus(LoanStatus.DRAFT)
-            .currentStage(ApprovalStage.CUSTOMER)
+            .loanStatus(LoanStatus.SUBMITTED)
+            .currentStage(ApprovalStage.MARKETING)
             .customer(user)
             .product(product)
             .branch(user.getBranch())
-            .submittedAt(null)
+            .submittedAt(LocalDateTime.now())
+            .lastStatusChangedAt(LocalDateTime.now())
             .purpose(request.getPurpose())
             .bankName(request.getBankName())
             .bankBranch(request.getBankBranch())
@@ -159,82 +193,22 @@ public class MarketingApplyLoanUseCase {
             // Snapshot product rates at loan creation
             .interestRate(product.getInterestRate())
             .adminFee(product.getAdminFee())
+            .pinValidated(pinValidated)
             .build();
 
     Loan savedLoan = loanRepository.save(loan);
 
-    // Save history
-    approvalHistoryRepository.save(
-        ApprovalHistory.builder()
-            .loanId(savedLoan.getId())
-            .fromStatus(null)
-            .toStatus(LoanStatus.DRAFT)
-            .actionBy(marketingUsername)
-            .notes("Loan Draft Created by Marketing on behalf of Customer")
-            .build());
+    // Save history - record as SUBMITTED (not DRAFT)
+    approvalHistoryFactory.recordStatusChange(
+        savedLoan.getId(),
+        null,
+        LoanStatus.SUBMITTED,
+        marketingUsername,
+        "Loan submitted by Marketing on behalf of Customer");
+
+    // Send notification
+    notificationService.notifyLoanStatusChange(user.getId(), LoanStatus.SUBMITTED);
 
     return loanDtoMapper.toResponse(savedLoan);
-  }
-
-  private void validateUserBiodataComplete(UserBiodata userBiodata) {
-    if (userBiodata.getNik() == null || userBiodata.getNik().isBlank()) {
-      throw new IllegalStateException("User biodata is incomplete: NIK is required.");
-    }
-    if (userBiodata.getDateOfBirth() == null) {
-      throw new IllegalStateException("User biodata is incomplete: Date of birth is required.");
-    }
-    if (userBiodata.getPlaceOfBirth() == null || userBiodata.getPlaceOfBirth().isBlank()) {
-      throw new IllegalStateException("User biodata is incomplete: Place of birth is required.");
-    }
-    if (userBiodata.getAddress() == null || userBiodata.getAddress().isBlank()) {
-      throw new IllegalStateException("User biodata is incomplete: Address is required.");
-    }
-    if (userBiodata.getCity() == null || userBiodata.getCity().isBlank()) {
-      throw new IllegalStateException("User biodata is incomplete: City is required.");
-    }
-    if (userBiodata.getProvince() == null || userBiodata.getProvince().isBlank()) {
-      throw new IllegalStateException("User biodata is incomplete: Province is required.");
-    }
-    if (userBiodata.getMonthlyIncome() == null) {
-      throw new IllegalStateException("User biodata is incomplete: Monthly income is required.");
-    }
-    if (userBiodata.getIncomeSource() == null || userBiodata.getIncomeSource().isBlank()) {
-      throw new IllegalStateException("User biodata is incomplete: Income source is required.");
-    }
-    if (userBiodata.getOccupation() == null || userBiodata.getOccupation().isBlank()) {
-      throw new IllegalStateException("User biodata is incomplete: Occupation is required.");
-    }
-  }
-
-  private void validateRiskConditions(
-      User user, UserBiodata userBiodata, MarketingApplyLoanRequest request) {
-    // Risk 1: Check if user has too many overdue days
-    if (user.getTotalOverdueDays() > 30) {
-      throw new IllegalStateException(
-          "Risk check failed: User has excessive overdue days ("
-              + user.getTotalOverdueDays()
-              + "). Loan application rejected.");
-    }
-
-    // Risk 2: Check loan amount against monthly income (debt-to-income ratio)
-    if (userBiodata.getMonthlyIncome() != null
-        && request.getLoanAmount().doubleValue()
-            > userBiodata.getMonthlyIncome().doubleValue() * 10) {
-      throw new IllegalStateException(
-          "Risk check failed: Loan amount exceeds 10x monthly income. Loan application rejected.");
-    }
-
-    // Risk 3: Check if user has too many completed loans with high overdue
-    if (user.getLoansCompleted() > 5 && user.getTotalOverdueDays() > 10) {
-      throw new IllegalStateException(
-          "Risk check failed: User has high loan history with overdue records. Loan application rejected.");
-    }
-
-    // Risk 4: Minimum income requirement
-    if (userBiodata.getMonthlyIncome() != null
-        && userBiodata.getMonthlyIncome().doubleValue() < 3000000) {
-      throw new IllegalStateException(
-          "Risk check failed: Monthly income below minimum requirement (Rp 3,000,000). Loan application rejected.");
-    }
   }
 }

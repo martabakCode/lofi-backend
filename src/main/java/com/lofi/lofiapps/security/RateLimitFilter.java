@@ -62,7 +62,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         || path.startsWith("/auth/register")
         || path.startsWith("/auth/google")
         || path.startsWith("/auth/forgot-password")
-        || path.startsWith("/auth/reset-password");
+        || path.startsWith("/auth/reset-password")
+        || path.startsWith("/users/me/pin")
+        || path.startsWith("/users/set-pin");
   }
 
   private String getClientIp(HttpServletRequest request) {

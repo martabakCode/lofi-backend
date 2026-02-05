@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 
 import com.lofi.lofiapps.dto.request.*;
 import com.lofi.lofiapps.dto.response.*;
+import com.lofi.lofiapps.enums.RoleName;
 import com.lofi.lofiapps.service.impl.usecase.rbac.*;
 import java.util.List;
 import java.util.UUID;
@@ -57,8 +58,8 @@ class RbacServiceImplTest {
     // Arrange
     List<RoleResponse> expectedRoles =
         List.of(
-            RoleResponse.builder().id(roleId).name("ROLE_ADMIN").build(),
-            RoleResponse.builder().id(UUID.randomUUID()).name("ROLE_USER").build());
+            RoleResponse.builder().id(roleId).name(RoleName.ROLE_ADMIN).build(),
+            RoleResponse.builder().id(UUID.randomUUID()).name(RoleName.ROLE_MARKETING).build());
 
     when(getRolesUseCase.execute()).thenReturn(expectedRoles);
 
@@ -76,10 +77,14 @@ class RbacServiceImplTest {
   void createRole_ShouldDelegateToUseCase() {
     // Arrange
     CreateRoleRequest request =
-        CreateRoleRequest.builder().name("ROLE_TEST").description("Test Role").build();
+        CreateRoleRequest.builder().name(RoleName.ROLE_ADMIN).description("Test Role").build();
 
     RoleResponse expectedResponse =
-        RoleResponse.builder().id(roleId).name("ROLE_TEST").description("Test Role").build();
+        RoleResponse.builder()
+            .id(roleId)
+            .name(RoleName.ROLE_ADMIN)
+            .description("Test Role")
+            .build();
 
     when(createRoleUseCase.execute(any(CreateRoleRequest.class))).thenReturn(expectedResponse);
 
@@ -88,7 +93,7 @@ class RbacServiceImplTest {
 
     // Assert
     assertNotNull(result);
-    assertEquals("ROLE_TEST", result.getName());
+    assertEquals(RoleName.ROLE_ADMIN, result.getName());
     verify(createRoleUseCase).execute(request);
   }
 
@@ -97,10 +102,17 @@ class RbacServiceImplTest {
   void updateRole_ShouldDelegateToUseCase() {
     // Arrange
     UpdateRoleRequest request =
-        UpdateRoleRequest.builder().name("ROLE_UPDATED").description("Updated Role").build();
+        UpdateRoleRequest.builder()
+            .name(RoleName.ROLE_SUPER_ADMIN)
+            .description("Updated Role")
+            .build();
 
     RoleResponse expectedResponse =
-        RoleResponse.builder().id(roleId).name("ROLE_UPDATED").description("Updated Role").build();
+        RoleResponse.builder()
+            .id(roleId)
+            .name(RoleName.ROLE_SUPER_ADMIN)
+            .description("Updated Role")
+            .build();
 
     when(updateRoleUseCase.execute(any(UUID.class), any(UpdateRoleRequest.class)))
         .thenReturn(expectedResponse);
@@ -110,7 +122,7 @@ class RbacServiceImplTest {
 
     // Assert
     assertNotNull(result);
-    assertEquals("ROLE_UPDATED", result.getName());
+    assertEquals(RoleName.ROLE_SUPER_ADMIN, result.getName());
     verify(updateRoleUseCase).execute(roleId, request);
   }
 
@@ -199,7 +211,7 @@ class RbacServiceImplTest {
   void getUserRoles_ShouldDelegateToUseCase() {
     // Arrange
     List<RoleResponse> expectedRoles =
-        List.of(RoleResponse.builder().id(roleId).name("ROLE_USER").build());
+        List.of(RoleResponse.builder().id(roleId).name(RoleName.ROLE_MARKETING).build());
 
     when(getUserRolesUseCase.execute(userId)).thenReturn(expectedRoles);
 

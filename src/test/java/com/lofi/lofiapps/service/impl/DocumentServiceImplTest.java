@@ -44,7 +44,7 @@ class DocumentServiceImplTest {
 
     PresignUploadResponse expectedResponse =
         PresignUploadResponse.builder()
-            .presignedUrl("https://presigned-url.example.com")
+            .uploadUrl("https://presigned-url.example.com")
             .documentId(documentId)
             .build();
 
@@ -57,7 +57,7 @@ class DocumentServiceImplTest {
     // Assert
     assertNotNull(result);
     assertEquals(documentId, result.getDocumentId());
-    assertEquals("https://presigned-url.example.com", result.getPresignedUrl());
+    assertEquals("https://presigned-url.example.com", result.getUploadUrl());
     verify(presignUploadUseCase).execute(request, userId);
   }
 
@@ -67,9 +67,8 @@ class DocumentServiceImplTest {
     // Arrange
     DownloadDocumentResponse expectedResponse =
         DownloadDocumentResponse.builder()
-            .presignedUrl("https://download-url.example.com")
+            .downloadUrl("https://download-url.example.com")
             .fileName("test.pdf")
-            .contentType("application/pdf")
             .build();
 
     when(getPresignedDownloadUrlUseCase.execute(any(UUID.class), any(UUID.class), anyBoolean()))
@@ -80,7 +79,7 @@ class DocumentServiceImplTest {
 
     // Assert
     assertNotNull(result);
-    assertEquals("https://download-url.example.com", result.getPresignedUrl());
+    assertEquals("https://download-url.example.com", result.getDownloadUrl());
     assertEquals("test.pdf", result.getFileName());
     verify(getPresignedDownloadUrlUseCase).execute(documentId, userId, false);
   }
@@ -91,9 +90,8 @@ class DocumentServiceImplTest {
     // Arrange
     DownloadDocumentResponse expectedResponse =
         DownloadDocumentResponse.builder()
-            .presignedUrl("https://admin-download-url.example.com")
+            .downloadUrl("https://admin-download-url.example.com")
             .fileName("admin-test.pdf")
-            .contentType("application/pdf")
             .build();
 
     when(getPresignedDownloadUrlUseCase.execute(any(UUID.class), any(UUID.class), eq(true)))
@@ -104,7 +102,7 @@ class DocumentServiceImplTest {
 
     // Assert
     assertNotNull(result);
-    assertEquals("https://admin-download-url.example.com", result.getPresignedUrl());
+    assertEquals("https://admin-download-url.example.com", result.getDownloadUrl());
     verify(getPresignedDownloadUrlUseCase).execute(documentId, userId, true);
   }
 }

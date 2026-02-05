@@ -8,6 +8,7 @@ import com.lofi.lofiapps.dto.request.CreateRoleRequest;
 import com.lofi.lofiapps.dto.response.RoleResponse;
 import com.lofi.lofiapps.entity.Permission;
 import com.lofi.lofiapps.entity.Role;
+import com.lofi.lofiapps.enums.RoleName;
 import com.lofi.lofiapps.repository.PermissionRepository;
 import com.lofi.lofiapps.repository.RoleRepository;
 import java.util.Collections;
@@ -43,7 +44,7 @@ class CreateRoleUseCaseTest {
 
     request =
         CreateRoleRequest.builder()
-            .name("ROLE_TEST")
+            .name(RoleName.ROLE_TEST)
             .description("Test Role")
             .permissionIds(List.of(permissionId))
             .build();
@@ -58,7 +59,7 @@ class CreateRoleUseCaseTest {
     savedRole =
         Role.builder()
             .id(roleId)
-            .name("ROLE_TEST")
+            .name(RoleName.ROLE_TEST)
             .description("Test Role")
             .permissions(java.util.Set.of(permission))
             .build();
@@ -68,7 +69,7 @@ class CreateRoleUseCaseTest {
   @DisplayName("Execute should create role successfully with permissions")
   void execute_ShouldCreateRoleSuccessfully() {
     // Arrange
-    when(roleRepository.findByName("ROLE_TEST")).thenReturn(Optional.empty());
+    when(roleRepository.findByName(RoleName.ROLE_TEST)).thenReturn(Optional.empty());
     when(permissionRepository.findAllById(List.of(permissionId))).thenReturn(List.of(permission));
     when(roleRepository.save(any(Role.class))).thenReturn(savedRole);
 
@@ -78,12 +79,12 @@ class CreateRoleUseCaseTest {
     // Assert
     assertNotNull(result);
     assertEquals(roleId, result.getId());
-    assertEquals("ROLE_TEST", result.getName());
+    assertEquals(RoleName.ROLE_TEST, result.getName());
     assertEquals("Test Role", result.getDescription());
     assertNotNull(result.getPermissions());
     assertEquals(1, result.getPermissions().size());
     assertEquals("TEST_PERMISSION", result.getPermissions().get(0).getName());
-    verify(roleRepository).findByName("ROLE_TEST");
+    verify(roleRepository).findByName(RoleName.ROLE_TEST);
     verify(roleRepository).save(any(Role.class));
   }
 
@@ -92,12 +93,16 @@ class CreateRoleUseCaseTest {
   void execute_ShouldCreateRoleWithoutPermissions() {
     // Arrange
     CreateRoleRequest requestWithoutPermissions =
-        CreateRoleRequest.builder().name("ROLE_SIMPLE").description("Simple Role").build();
+        CreateRoleRequest.builder().name(RoleName.ROLE_SIMPLE).description("Simple Role").build();
 
     Role savedRoleWithoutPermissions =
-        Role.builder().id(UUID.randomUUID()).name("ROLE_SIMPLE").description("Simple Role").build();
+        Role.builder()
+            .id(UUID.randomUUID())
+            .name(RoleName.ROLE_SIMPLE)
+            .description("Simple Role")
+            .build();
 
-    when(roleRepository.findByName("ROLE_SIMPLE")).thenReturn(Optional.empty());
+    when(roleRepository.findByName(RoleName.ROLE_SIMPLE)).thenReturn(Optional.empty());
     when(roleRepository.save(any(Role.class))).thenReturn(savedRoleWithoutPermissions);
 
     // Act
@@ -105,7 +110,7 @@ class CreateRoleUseCaseTest {
 
     // Assert
     assertNotNull(result);
-    assertEquals("ROLE_SIMPLE", result.getName());
+    assertEquals(RoleName.ROLE_SIMPLE, result.getName());
     assertNotNull(result.getPermissions());
     assertTrue(result.getPermissions().isEmpty());
   }
@@ -114,13 +119,13 @@ class CreateRoleUseCaseTest {
   @DisplayName("Execute should throw exception when role already exists")
   void execute_ShouldThrowException_WhenRoleExists() {
     // Arrange
-    when(roleRepository.findByName("ROLE_TEST")).thenReturn(Optional.of(savedRole));
+    when(roleRepository.findByName(RoleName.ROLE_TEST)).thenReturn(Optional.of(savedRole));
 
     // Act & Assert
     IllegalStateException exception =
         assertThrows(IllegalStateException.class, () -> createRoleUseCase.execute(request));
     assertEquals("Role already exists: ROLE_TEST", exception.getMessage());
-    verify(roleRepository).findByName("ROLE_TEST");
+    verify(roleRepository).findByName(RoleName.ROLE_TEST);
     verify(roleRepository, never()).save(any(Role.class));
   }
 
@@ -130,15 +135,19 @@ class CreateRoleUseCaseTest {
     // Arrange
     CreateRoleRequest requestWithEmptyPermissions =
         CreateRoleRequest.builder()
-            .name("ROLE_EMPTY")
+            .name(RoleName.ROLE_EMPTY)
             .description("Empty Role")
             .permissionIds(Collections.emptyList())
             .build();
 
     Role savedRoleWithEmptyPermissions =
-        Role.builder().id(UUID.randomUUID()).name("ROLE_EMPTY").description("Empty Role").build();
+        Role.builder()
+            .id(UUID.randomUUID())
+            .name(RoleName.ROLE_EMPTY)
+            .description("Empty Role")
+            .build();
 
-    when(roleRepository.findByName("ROLE_EMPTY")).thenReturn(Optional.empty());
+    when(roleRepository.findByName(RoleName.ROLE_EMPTY)).thenReturn(Optional.empty());
     when(roleRepository.save(any(Role.class))).thenReturn(savedRoleWithEmptyPermissions);
 
     // Act
@@ -146,7 +155,7 @@ class CreateRoleUseCaseTest {
 
     // Assert
     assertNotNull(result);
-    assertEquals("ROLE_EMPTY", result.getName());
+    assertEquals(RoleName.ROLE_EMPTY, result.getName());
     assertTrue(result.getPermissions().isEmpty());
   }
 }

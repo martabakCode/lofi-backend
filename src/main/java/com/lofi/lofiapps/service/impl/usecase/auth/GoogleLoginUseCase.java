@@ -111,8 +111,8 @@ public class GoogleLoginUseCase {
       if (branch.getLatitude() == null || branch.getLongitude() == null) continue;
 
       try {
-        double branchLat = Double.parseDouble(branch.getLatitude());
-        double branchLon = Double.parseDouble(branch.getLongitude());
+        double branchLat = branch.getLatitude().doubleValue();
+        double branchLon = branch.getLongitude().doubleValue();
         double distance = calculateDistance(lat, lon, branchLat, branchLon);
 
         if (distance < minDistance) {

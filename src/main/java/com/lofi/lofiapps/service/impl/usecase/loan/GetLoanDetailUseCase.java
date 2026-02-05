@@ -6,6 +6,7 @@ import com.lofi.lofiapps.entity.Loan;
 import com.lofi.lofiapps.mapper.LoanDtoMapper;
 import com.lofi.lofiapps.repository.DocumentRepository;
 import com.lofi.lofiapps.repository.LoanRepository;
+import com.lofi.lofiapps.service.impl.mapper.DocumentMapper;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -22,6 +23,7 @@ public class GetLoanDetailUseCase {
   private final LoanRepository loanRepository;
   private final DocumentRepository documentRepository;
   private final LoanDtoMapper loanDtoMapper;
+  private final DocumentMapper documentMapper;
 
   @Transactional(readOnly = true)
   public LoanResponse execute(UUID loanId) {
@@ -34,14 +36,7 @@ public class GetLoanDetailUseCase {
     // Fetch documents
     List<DocumentResponse> documents =
         documentRepository.findByLoanId(loanId).stream()
-            .map(
-                doc ->
-                    DocumentResponse.builder()
-                        .id(doc.getId())
-                        .fileName(doc.getFileName())
-                        .documentType(doc.getDocumentType())
-                        .uploadedAt(doc.getCreatedAt())
-                        .build())
+            .map(documentMapper::toResponse)
             .collect(Collectors.toList());
 
     response.setDocuments(documents);

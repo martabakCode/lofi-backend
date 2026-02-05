@@ -4,10 +4,12 @@ import com.lofi.lofiapps.dto.request.CreateProductRequest;
 import com.lofi.lofiapps.dto.response.*;
 import com.lofi.lofiapps.dto.response.PagedResponse;
 import com.lofi.lofiapps.dto.response.ProductResponse;
+import com.lofi.lofiapps.security.service.UserPrincipal;
 import com.lofi.lofiapps.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -73,6 +75,28 @@ public class ProductController {
 
     return ResponseEntity.ok(
         ApiResponse.success(productService.getAssignedProduct(userPrincipal.getId())));
+  }
+
+  @GetMapping("/available")
+  @PreAuthorize("hasRole('CUSTOMER')")
+  @Operation(summary = "Get available product limit with loan deductions")
+  public ResponseEntity<ApiResponse<AvailableProductResponse>> getAvailableProduct(
+      @org.springframework.security.core.annotation.AuthenticationPrincipal
+          UserPrincipal userPrincipal) {
+
+    return ResponseEntity.ok(
+        ApiResponse.success(productService.getAvailableProduct(userPrincipal.getId())));
+  }
+
+  @GetMapping("/available/all")
+  @PreAuthorize("hasRole('CUSTOMER')")
+  @Operation(summary = "Get all available products with loan deductions")
+  public ResponseEntity<ApiResponse<List<AvailableProductResponse>>> getAllAvailableProducts(
+      @org.springframework.security.core.annotation.AuthenticationPrincipal
+          UserPrincipal userPrincipal) {
+
+    return ResponseEntity.ok(
+        ApiResponse.success(productService.getAllAvailableProducts(userPrincipal.getId())));
   }
 
   @GetMapping("/{id}")

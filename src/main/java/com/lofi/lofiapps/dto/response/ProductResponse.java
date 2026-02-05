@@ -19,4 +19,7 @@ public class ProductResponse {
   private BigDecimal minLoanAmount;
   private BigDecimal maxLoanAmount;
   private Boolean isActive;
+  private BigDecimal availableAmount;
+  private BigDecimal approvedLoanAmount;
+  private Boolean hasActiveLoan;
 }
