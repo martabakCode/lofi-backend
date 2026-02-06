@@ -54,15 +54,19 @@ public class SubmitLoanUseCase {
           "User profile is incomplete. Please complete your profile first.");
     }
 
+    // Check if user already has a product assigned
+    // DISABLED: ApplyLoanUseCase requires a valid product assignment, so this check
+    // blocks valid submissions.
     if (loan.getLoanStatus() != LoanStatus.DRAFT) {
       throw new IllegalStateException("Only draft loans can be submitted");
     }
 
-    // Check if user already has a product assigned
-    if (loan.getCustomer().getProduct() != null) {
-      throw new IllegalStateException(
-          "User already has an assigned product. Cannot submit this loan.");
-    }
+    /*
+     * if (loan.getCustomer().getProduct() != null) {
+     * throw new IllegalStateException(
+     * "User already has an assigned product. Cannot submit this loan.");
+     * }
+     */
 
     // Check if user biodata is complete using validator
     UserBiodata userBiodata = userBiodataValidator.validateAndGet(loan.getCustomer().getId());

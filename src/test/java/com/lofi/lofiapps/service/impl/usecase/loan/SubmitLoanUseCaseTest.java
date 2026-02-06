@@ -6,7 +6,6 @@ import static org.mockito.Mockito.*;
 
 import com.lofi.lofiapps.dto.response.LoanResponse;
 import com.lofi.lofiapps.entity.Loan;
-import com.lofi.lofiapps.entity.Product;
 import com.lofi.lofiapps.entity.User;
 import com.lofi.lofiapps.entity.UserBiodata;
 import com.lofi.lofiapps.enums.ApprovalStage;
@@ -177,23 +176,6 @@ class SubmitLoanUseCaseTest {
         assertThrows(
             IllegalStateException.class, () -> submitLoanUseCase.execute(loanId, username));
     assertEquals("Only draft loans can be submitted", exception.getMessage());
-  }
-
-  @Test
-  @DisplayName("Execute should throw exception when user already has assigned product")
-  void execute_ShouldThrowException_WhenUserHasAssignedProduct() {
-    // Arrange
-    Product assignedProduct =
-        Product.builder().id(UUID.randomUUID()).productName("Test Product").build();
-    customer.setProduct(assignedProduct);
-    when(loanRepository.findById(loanId)).thenReturn(Optional.of(draftLoan));
-
-    // Act & Assert
-    IllegalStateException exception =
-        assertThrows(
-            IllegalStateException.class, () -> submitLoanUseCase.execute(loanId, username));
-    assertEquals(
-        "User already has an assigned product. Cannot submit this loan.", exception.getMessage());
   }
 
   @Test

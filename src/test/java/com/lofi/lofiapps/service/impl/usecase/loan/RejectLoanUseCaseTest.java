@@ -10,9 +10,9 @@ import com.lofi.lofiapps.entity.User;
 import com.lofi.lofiapps.enums.LoanStatus;
 import com.lofi.lofiapps.exception.ResourceNotFoundException;
 import com.lofi.lofiapps.mapper.LoanDtoMapper;
-import com.lofi.lofiapps.repository.ApprovalHistoryRepository;
 import com.lofi.lofiapps.repository.LoanRepository;
 import com.lofi.lofiapps.service.NotificationService;
+import com.lofi.lofiapps.service.impl.factory.ApprovalHistoryFactory;
 import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,7 +28,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class RejectLoanUseCaseTest {
 
   @Mock private LoanRepository loanRepository;
-  @Mock private ApprovalHistoryRepository approvalHistoryRepository;
+  @Mock private ApprovalHistoryFactory approvalHistoryFactory;
   @Mock private NotificationService notificationService;
   @Mock private LoanDtoMapper loanDtoMapper;
 
@@ -82,7 +82,8 @@ class RejectLoanUseCaseTest {
 
     when(loanRepository.save(any(Loan.class))).thenReturn(savedLoan);
     when(loanDtoMapper.toResponse(any(Loan.class))).thenReturn(expectedResponse);
-    when(approvalHistoryRepository.save(any())).thenReturn(null);
+    when(approvalHistoryFactory.recordStatusChange(any(UUID.class), any(), any(), any(), any()))
+        .thenReturn(null);
     doNothing().when(notificationService).notifyLoanStatusChange(any(), any());
 
     // Act
@@ -92,7 +93,7 @@ class RejectLoanUseCaseTest {
     assertNotNull(result);
     assertEquals(LoanStatus.REJECTED, result.getLoanStatus());
     verify(loanRepository).save(any(Loan.class));
-    verify(approvalHistoryRepository).save(any());
+    verify(approvalHistoryFactory).recordStatusChange(any(UUID.class), any(), any(), any(), any());
     verify(notificationService).notifyLoanStatusChange(customerId, LoanStatus.REJECTED);
   }
 
@@ -127,7 +128,8 @@ class RejectLoanUseCaseTest {
 
     when(loanRepository.save(any(Loan.class))).thenReturn(savedLoan);
     when(loanDtoMapper.toResponse(any(Loan.class))).thenReturn(expectedResponse);
-    when(approvalHistoryRepository.save(any())).thenReturn(null);
+    when(approvalHistoryFactory.recordStatusChange(any(UUID.class), any(), any(), any(), any()))
+        .thenReturn(null);
     doNothing().when(notificationService).notifyLoanStatusChange(any(), any());
 
     // Act
@@ -155,13 +157,14 @@ class RejectLoanUseCaseTest {
 
     when(loanRepository.save(any(Loan.class))).thenReturn(savedLoan);
     when(loanDtoMapper.toResponse(any(Loan.class))).thenReturn(expectedResponse);
-    when(approvalHistoryRepository.save(any())).thenReturn(null);
+    when(approvalHistoryFactory.recordStatusChange(any(UUID.class), any(), any(), any(), any()))
+        .thenReturn(null);
     doNothing().when(notificationService).notifyLoanStatusChange(any(), any());
 
     // Act
     rejectLoanUseCase.execute(loanId, rejectorUsername, rejectionNotes);
 
     // Assert
-    verify(approvalHistoryRepository).save(any());
+    verify(approvalHistoryFactory).recordStatusChange(any(UUID.class), any(), any(), any(), any());
   }
 }

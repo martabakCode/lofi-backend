@@ -54,7 +54,7 @@ class NotificationTestControllerTest {
 
     mockMvc
         .perform(
-            post("/api/v1/test/notification")
+            post("/test/notification")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
         .andExpect(status().isOk())

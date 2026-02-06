@@ -19,6 +19,7 @@ import com.lofi.lofiapps.repository.LoanRepository;
 import com.lofi.lofiapps.repository.ProductRepository;
 import com.lofi.lofiapps.repository.UserBiodataRepository;
 import com.lofi.lofiapps.repository.UserRepository;
+import com.lofi.lofiapps.service.NotificationService;
 import com.lofi.lofiapps.service.impl.calculator.PlafondCalculator;
 import com.lofi.lofiapps.service.impl.factory.ApprovalHistoryFactory;
 import com.lofi.lofiapps.service.impl.validator.RiskValidator;
@@ -47,6 +48,8 @@ class ApplyLoanUseCaseTest {
   @Mock private RiskValidator riskValidator;
   @Mock private PlafondCalculator plafondCalculator;
   @Mock private ApprovalHistoryFactory approvalHistoryFactory;
+  @Mock private NotificationService notificationService;
+  @Mock private com.lofi.lofiapps.service.impl.usecase.pin.ValidatePinUseCase validatePinUseCase;
 
   @InjectMocks private ApplyLoanUseCase applyLoanUseCase;
 
@@ -70,6 +73,7 @@ class ApplyLoanUseCaseTest {
             .email("test@example.com")
             .status(UserStatus.ACTIVE)
             .profileCompleted(true)
+            .pinSet(true)
             .build();
 
     product =
@@ -137,6 +141,7 @@ class ApplyLoanUseCaseTest {
     when(loanDtoMapper.toResponse(any(Loan.class))).thenReturn(expectedResponse);
     when(approvalHistoryFactory.recordStatusChange(any(UUID.class), any(), any(), any(), any()))
         .thenReturn(null);
+    doNothing().when(notificationService).notifyLoanStatusChange(any(), any());
 
     // Act
     LoanResponse result = applyLoanUseCase.execute(loanRequest, userId, username);
@@ -146,7 +151,8 @@ class ApplyLoanUseCaseTest {
     verify(loanRepository).save(any(Loan.class));
     verify(approvalHistoryFactory)
         .recordStatusChange(
-            any(UUID.class), isNull(), eq(LoanStatus.DRAFT), eq(username), anyString());
+            any(UUID.class), isNull(), eq(LoanStatus.SUBMITTED), eq(username), anyString());
+    verify(notificationService).notifyLoanStatusChange(any(), eq(LoanStatus.SUBMITTED));
   }
 
   @Test

@@ -1,5 +1,8 @@
 package com.lofi.lofiapps.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,16 +31,31 @@ public class RedisConfig {
   public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
     RedisTemplate<String, Object> template = new RedisTemplate<>();
     template.setConnectionFactory(connectionFactory);
+
+    ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.registerModule(new JavaTimeModule());
+    objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+    GenericJackson2JsonRedisSerializer serializer =
+        new GenericJackson2JsonRedisSerializer(objectMapper);
+
     template.setKeySerializer(new StringRedisSerializer());
     template.setHashKeySerializer(new StringRedisSerializer());
-    template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
-    template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
+    template.setValueSerializer(serializer);
+    template.setHashValueSerializer(serializer);
     return template;
   }
 
   @Bean
   @ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis")
   public CacheManager redisCacheManager(RedisConnectionFactory connectionFactory) {
+    ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.registerModule(new JavaTimeModule());
+    objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+    GenericJackson2JsonRedisSerializer serializer =
+        new GenericJackson2JsonRedisSerializer(objectMapper);
+
     RedisCacheConfiguration defaultConfig =
         RedisCacheConfiguration.defaultCacheConfig()
             .entryTtl(Duration.ofHours(DEFAULT_TTL_HOURS))
@@ -45,8 +63,7 @@ public class RedisConfig {
                 RedisSerializationContext.SerializationPair.fromSerializer(
                     new StringRedisSerializer()))
             .serializeValuesWith(
-                RedisSerializationContext.SerializationPair.fromSerializer(
-                    new GenericJackson2JsonRedisSerializer()))
+                RedisSerializationContext.SerializationPair.fromSerializer(serializer))
             .disableCachingNullValues();
 
     Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();

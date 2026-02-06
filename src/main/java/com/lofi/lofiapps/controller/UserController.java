@@ -1,6 +1,7 @@
 package com.lofi.lofiapps.controller;
 
 import com.lofi.lofiapps.dto.request.CreateUserRequest;
+import com.lofi.lofiapps.dto.request.SetGooglePinRequest;
 import com.lofi.lofiapps.dto.request.SetPinRequest;
 import com.lofi.lofiapps.dto.request.UpdateProfileRequest;
 import com.lofi.lofiapps.dto.request.UserCriteria;
@@ -15,6 +16,7 @@ import com.lofi.lofiapps.enums.UserStatus;
 import com.lofi.lofiapps.security.service.UserPrincipal;
 import com.lofi.lofiapps.service.impl.AdminServiceImpl;
 import com.lofi.lofiapps.service.impl.UserServiceImpl;
+import com.lofi.lofiapps.service.impl.usecase.user.SetGooglePinUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -36,6 +38,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserController {
   private final AdminServiceImpl adminService;
   private final UserServiceImpl userService;
+  private final SetGooglePinUseCase setGooglePinUseCase;
 
   @GetMapping
   @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
@@ -103,6 +106,20 @@ public class UserController {
     }
     UUID userId = ((UserPrincipal) principal).getId();
     userService.setPin(userId, request);
+    return ResponseEntity.ok(ApiResponse.success(null, "PIN set successfully"));
+  }
+
+  @PostMapping("/set-google-pin")
+  @PreAuthorize("hasRole('CUSTOMER')")
+  @Operation(summary = "Set initial PIN for Google users")
+  public ResponseEntity<ApiResponse<Void>> setGooglePin(
+      @Valid @RequestBody SetGooglePinRequest request) {
+    Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    if (!(principal instanceof UserPrincipal)) {
+      return ResponseEntity.status(401).build();
+    }
+    UUID userId = ((UserPrincipal) principal).getId();
+    setGooglePinUseCase.execute(userId, request);
     return ResponseEntity.ok(ApiResponse.success(null, "PIN set successfully"));
   }
 

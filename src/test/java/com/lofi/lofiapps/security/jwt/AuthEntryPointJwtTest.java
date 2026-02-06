@@ -7,9 +7,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,14 +25,6 @@ class AuthEntryPointJwtTest {
   @Mock private AuthenticationException authException;
 
   @InjectMocks private AuthEntryPointJwt authEntryPointJwt;
-
-  private StringWriter responseWriter;
-
-  @BeforeEach
-  void setUp() throws IOException {
-    responseWriter = new StringWriter();
-    when(response.getWriter()).thenReturn(new PrintWriter(responseWriter));
-  }
 
   @Test
   @DisplayName("Commence should return 401 Unauthorized with error message")

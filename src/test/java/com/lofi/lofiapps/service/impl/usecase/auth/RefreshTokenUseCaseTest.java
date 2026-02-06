@@ -95,8 +95,6 @@ class RefreshTokenUseCaseTest {
   @DisplayName("Execute should throw exception when token is null")
   void execute_ShouldThrowException_WhenTokenIsNull() {
     // Arrange
-    when(jwtUtils.validateJwtToken(null)).thenReturn(false);
-
     // Act & Assert
     IllegalArgumentException exception =
         assertThrows(IllegalArgumentException.class, () -> refreshTokenUseCase.execute(null));

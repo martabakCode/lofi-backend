@@ -75,7 +75,7 @@ class NotificationControllerTest {
     when(getNotificationsUseCase.execute(userId)).thenReturn(List.of(new NotificationResponse()));
 
     mockMvc
-        .perform(get("/api/v1/notifications"))
+        .perform(get("/notifications"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data").isArray());

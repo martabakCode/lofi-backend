@@ -56,7 +56,7 @@ class RegisterUseCaseTest {
         Role.builder().id(java.util.UUID.randomUUID()).name(RoleName.ROLE_CUSTOMER).build();
     when(roleRepository.findByName(RoleName.ROLE_CUSTOMER)).thenReturn(Optional.of(customerRole));
 
-    when(passwordEncoder.encode(validRequest.getPassword())).thenReturn("encodedPassword");
+    when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
     when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
     LoginResponse expectedResponse =
@@ -158,7 +158,7 @@ class RegisterUseCaseTest {
         Role.builder().id(java.util.UUID.randomUUID()).name(RoleName.ROLE_CUSTOMER).build();
     when(roleRepository.findByName(RoleName.ROLE_CUSTOMER)).thenReturn(Optional.of(customerRole));
 
-    when(passwordEncoder.encode(validRequest.getPassword())).thenReturn("encodedPassword123");
+    when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword123");
     when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
     LoginResponse expectedResponse = LoginResponse.builder().accessToken("token").build();

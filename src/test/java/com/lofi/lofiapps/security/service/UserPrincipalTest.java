@@ -233,6 +233,7 @@ class UserPrincipalTest {
             .id(UUID.randomUUID())
             .email("user@example.com")
             .password("password")
+            .status(com.lofi.lofiapps.enums.UserStatus.ACTIVE)
             .roles(new HashSet<>())
             .build();
 

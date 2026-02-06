@@ -30,6 +30,10 @@ public class AssignRolesToUserUseCase {
     // Enforce rule: Customer roles cannot be changed manually through this API
     // easily
     // Usually, we check if the target user is an internal user
+    if (user.getRoles() == null) {
+      user.setRoles(new HashSet<>());
+    }
+
     boolean isCustomer =
         user.getRoles().stream().anyMatch(r -> r.getName() == RoleName.ROLE_CUSTOMER);
     if (isCustomer) {

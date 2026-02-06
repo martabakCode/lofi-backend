@@ -93,10 +93,15 @@ public class GoogleLoginUseCase {
     String jwt = jwtUtils.generateJwtToken(authentication);
     long expiration = jwtUtils.getExpirationFromJwtToken(jwt);
 
+    // Determine if user needs to set PIN
+    boolean pinRequired = user.getPassword() == null && !Boolean.TRUE.equals(user.getPinSet());
+
     return LoginResponse.builder()
         .accessToken(jwt)
         .expiresIn(expiration / 1000)
         .tokenType("Bearer")
+        .pinSet(user.getPinSet())
+        .pinRequired(pinRequired)
         .build();
   }
 

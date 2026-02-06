@@ -17,6 +17,7 @@ public class LoginResponse {
   private long expiresIn;
   private String tokenType;
   private Boolean pinSet;
+  private Boolean pinRequired; // For Google users who haven't set PIN yet
   private Boolean profileCompleted;
 
   private Boolean hasSubmittedLoan;

@@ -12,13 +12,14 @@ import com.lofi.lofiapps.enums.ApprovalStage;
 import com.lofi.lofiapps.enums.LoanStatus;
 import com.lofi.lofiapps.exception.ResourceNotFoundException;
 import com.lofi.lofiapps.mapper.LoanDtoMapper;
-import com.lofi.lofiapps.repository.ApprovalHistoryRepository;
 import com.lofi.lofiapps.repository.LoanRepository;
 import com.lofi.lofiapps.repository.UserRepository;
 import com.lofi.lofiapps.service.BranchAccessGuard;
 import com.lofi.lofiapps.service.LoanActionValidator;
 import com.lofi.lofiapps.service.NotificationService;
 import com.lofi.lofiapps.service.RoleActionGuard;
+import com.lofi.lofiapps.service.impl.calculator.PlafondCalculator;
+import com.lofi.lofiapps.service.impl.factory.ApprovalHistoryFactory;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Optional;
@@ -36,7 +37,8 @@ class ApproveLoanUseCaseTest {
 
   @Mock private LoanRepository loanRepository;
   @Mock private UserRepository userRepository;
-  @Mock private ApprovalHistoryRepository approvalHistoryRepository;
+  @Mock private ApprovalHistoryFactory approvalHistoryFactory;
+  @Mock private PlafondCalculator plafondCalculator;
   @Mock private NotificationService notificationService;
   @Mock private RoleActionGuard roleActionGuard;
   @Mock private BranchAccessGuard branchAccessGuard;
@@ -76,6 +78,7 @@ class ApproveLoanUseCaseTest {
             .email("customer@example.com")
             .username("customer")
             .product(product)
+            .pinSet(true)
             .build();
 
     reviewedLoan =
@@ -117,7 +120,10 @@ class ApproveLoanUseCaseTest {
 
     when(loanRepository.save(any(Loan.class))).thenReturn(savedLoan);
     when(loanDtoMapper.toResponse(any(Loan.class))).thenReturn(expectedResponse);
-    when(approvalHistoryRepository.save(any())).thenReturn(null);
+    when(approvalHistoryFactory.recordStatusChange(any(UUID.class), any(), any(), any(), any()))
+        .thenReturn(null);
+    when(plafondCalculator.calculateAvailablePlafond(any(User.class), any(UUID.class)))
+        .thenReturn(BigDecimal.valueOf(10000000));
     doNothing().when(notificationService).notifyLoanStatusChange(any(), any());
 
     // Act
@@ -127,7 +133,7 @@ class ApproveLoanUseCaseTest {
     assertNotNull(result);
     assertEquals(LoanStatus.APPROVED, result.getLoanStatus());
     verify(loanRepository).save(any(Loan.class));
-    verify(approvalHistoryRepository).save(any());
+    verify(approvalHistoryFactory).recordStatusChange(any(UUID.class), any(), any(), any(), any());
     verify(notificationService).notifyLoanStatusChange(customerId, LoanStatus.APPROVED);
   }
 
@@ -189,6 +195,8 @@ class ApproveLoanUseCaseTest {
     doNothing().when(roleActionGuard).validate(any(User.class), eq("approve"));
     doNothing().when(branchAccessGuard).validate(any(User.class), any(Loan.class));
     doNothing().when(loanActionValidator).validate(any(Loan.class), eq("approve"));
+    when(plafondCalculator.calculateAvailablePlafond(any(User.class), any(UUID.class)))
+        .thenReturn(BigDecimal.valueOf(5000000)); // Less than loan amount (15M)
 
     // Act & Assert
     IllegalStateException exception =
@@ -214,6 +222,8 @@ class ApproveLoanUseCaseTest {
     doNothing().when(roleActionGuard).validate(any(User.class), eq("approve"));
     doNothing().when(branchAccessGuard).validate(any(User.class), any(Loan.class));
     doNothing().when(loanActionValidator).validate(any(Loan.class), eq("approve"));
+    when(plafondCalculator.calculateAvailablePlafond(any(User.class), any(UUID.class)))
+        .thenReturn(BigDecimal.valueOf(20000000));
     when(loanRepository.findByCustomerId(customerId))
         .thenReturn(Collections.singletonList(existingApprovedLoan));
 

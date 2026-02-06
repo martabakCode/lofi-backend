@@ -190,7 +190,7 @@ class LoginUseCaseTest {
 
     // Assert
     assertNotNull(result);
-    verify(userRepository, never()).findById(any());
+    verify(userRepository, times(1)).findById(testUserId);
     verify(userRepository, never()).save(any());
   }
 

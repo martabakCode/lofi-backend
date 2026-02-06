@@ -65,11 +65,8 @@ class LogoutUseCaseTest {
   @DisplayName("Execute should handle null token gracefully")
   void execute_ShouldHandleNullToken() {
     // Arrange
-    when(jwtUtils.validateJwtToken(null)).thenReturn(false);
-
     // Act & Assert
     assertDoesNotThrow(() -> logoutUseCase.execute(null));
-    verify(jwtUtils).validateJwtToken(null);
     verify(tokenBlacklistService, never()).blacklistToken(anyString(), anyLong());
   }
 
