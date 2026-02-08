@@ -37,11 +37,28 @@ public class LoanController {
       @RequestParam(required = false) LoanStatus status,
       @RequestParam(required = false) UUID branchId,
       @RequestParam(required = false) UUID customerId,
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
       @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
           Pageable pageable) {
 
+    UUID finalBranchId = branchId;
+    boolean isAdmin =
+        userPrincipal.getAuthorities().stream()
+            .anyMatch(
+                a ->
+                    a.getAuthority().equals("ROLE_ADMIN")
+                        || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+
+    if (!isAdmin) {
+      finalBranchId = userPrincipal.getBranchId();
+    }
+
     LoanCriteria criteria =
-        LoanCriteria.builder().status(status).branchId(branchId).customerId(customerId).build();
+        LoanCriteria.builder()
+            .status(status)
+            .branchId(finalBranchId)
+            .customerId(customerId)
+            .build();
 
     return ResponseEntity.ok(ApiResponse.success(loanService.getLoans(criteria, pageable)));
   }

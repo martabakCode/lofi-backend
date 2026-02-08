@@ -3,20 +3,25 @@ package com.lofi.lofiapps.controller;
 import com.lofi.lofiapps.dto.request.CreateUserRequest;
 import com.lofi.lofiapps.dto.request.SetGooglePinRequest;
 import com.lofi.lofiapps.dto.request.SetPinRequest;
+import com.lofi.lofiapps.dto.request.UpdateGooglePinRequest;
 import com.lofi.lofiapps.dto.request.UpdateProfileRequest;
 import com.lofi.lofiapps.dto.request.UserCriteria;
 import com.lofi.lofiapps.dto.response.ApiResponse;
+import com.lofi.lofiapps.dto.response.AuthSourceResponse;
 import com.lofi.lofiapps.dto.response.EligibilityAnalysisResponse;
 import com.lofi.lofiapps.dto.response.PagedResponse;
 import com.lofi.lofiapps.dto.response.PinStatusResponse;
 import com.lofi.lofiapps.dto.response.UserProfileResponse;
 import com.lofi.lofiapps.dto.response.UserSummaryResponse;
+import com.lofi.lofiapps.entity.User;
 import com.lofi.lofiapps.enums.RoleName;
 import com.lofi.lofiapps.enums.UserStatus;
+import com.lofi.lofiapps.repository.UserRepository;
 import com.lofi.lofiapps.security.service.UserPrincipal;
 import com.lofi.lofiapps.service.impl.AdminServiceImpl;
 import com.lofi.lofiapps.service.impl.UserServiceImpl;
 import com.lofi.lofiapps.service.impl.usecase.user.SetGooglePinUseCase;
+import com.lofi.lofiapps.service.impl.usecase.user.UpdateGooglePinUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -36,9 +41,11 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 @Tag(name = "User", description = "User Management")
 public class UserController {
+  private final UserRepository userRepository;
   private final AdminServiceImpl adminService;
   private final UserServiceImpl userService;
   private final SetGooglePinUseCase setGooglePinUseCase;
+  private final UpdateGooglePinUseCase updateGooglePinUseCase;
 
   @GetMapping
   @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
@@ -121,6 +128,42 @@ public class UserController {
     UUID userId = ((UserPrincipal) principal).getId();
     setGooglePinUseCase.execute(userId, request);
     return ResponseEntity.ok(ApiResponse.success(null, "PIN set successfully"));
+  }
+
+  @PutMapping("/me/google-pin")
+  @PreAuthorize("hasRole('CUSTOMER')")
+  @Operation(summary = "Update PIN for Google users")
+  public ResponseEntity<ApiResponse<Void>> updateGooglePin(
+      @Valid @RequestBody UpdateGooglePinRequest request) {
+    Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    if (!(principal instanceof UserPrincipal)) {
+      return ResponseEntity.status(401).build();
+    }
+    UUID userId = ((UserPrincipal) principal).getId();
+    updateGooglePinUseCase.execute(userId, request);
+    return ResponseEntity.ok(ApiResponse.success(null, "PIN updated successfully"));
+  }
+
+  @GetMapping("/me/auth-source")
+  @Operation(summary = "Get authentication source (Google or Traditional)")
+  public ResponseEntity<ApiResponse<AuthSourceResponse>> getAuthSource() {
+    Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    if (!(principal instanceof UserPrincipal)) {
+      return ResponseEntity.status(401).build();
+    }
+    UUID userId = ((UserPrincipal) principal).getId();
+    User user = userRepository.findById(userId).orElse(null);
+    if (user == null) {
+      return ResponseEntity.status(404).build();
+    }
+    boolean isGoogleUser = user.getFirebaseUid() != null && user.getPassword() == null;
+    String authSource = isGoogleUser ? "GOOGLE" : "TRADITIONAL";
+    return ResponseEntity.ok(
+        ApiResponse.success(
+            AuthSourceResponse.builder()
+                .authSource(authSource)
+                .isGoogleUser(isGoogleUser)
+                .build()));
   }
 
   @GetMapping("/me/pin/status")

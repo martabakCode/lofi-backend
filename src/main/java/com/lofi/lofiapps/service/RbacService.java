@@ -24,6 +24,9 @@ public interface RbacService {
 
   void removePermissionFromRole(UUID roleId, UUID permissionId);
 
+  // Users
+  List<UserSummaryResponse> getUsers();
+
   // User Roles
   List<RoleResponse> getUserRoles(UUID userId);
 

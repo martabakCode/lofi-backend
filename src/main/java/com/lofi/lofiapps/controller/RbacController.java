@@ -94,6 +94,15 @@ public class RbacController {
     return ResponseEntity.ok(ApiResponse.success(null, "Permission removed from role"));
   }
 
+  // --- User Management ---
+
+  @GetMapping("/users")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+  @Operation(summary = "Get all users for RBAC")
+  public ResponseEntity<ApiResponse<List<UserSummaryResponse>>> getUsers() {
+    return ResponseEntity.ok(ApiResponse.success(rbacService.getUsers(), "Users retrieved"));
+  }
+
   // --- User-Role Mapping ---
 
   @GetMapping("/users/{userId}/roles")

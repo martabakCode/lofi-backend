@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lofi.lofiapps.dto.request.CreateUserRequest;
+import com.lofi.lofiapps.dto.request.SetGooglePinRequest;
 import com.lofi.lofiapps.dto.request.UpdateProfileRequest;
 import com.lofi.lofiapps.dto.response.UserProfileResponse;
 import com.lofi.lofiapps.dto.response.UserSummaryResponse;
@@ -14,6 +15,7 @@ import com.lofi.lofiapps.enums.UserStatus;
 import com.lofi.lofiapps.security.service.UserPrincipal;
 import com.lofi.lofiapps.service.impl.AdminServiceImpl;
 import com.lofi.lofiapps.service.impl.UserServiceImpl;
+import com.lofi.lofiapps.service.impl.usecase.user.SetGooglePinUseCase;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Set;
@@ -44,6 +46,8 @@ class UserControllerTest {
   @Mock private AdminServiceImpl adminService;
 
   @Mock private UserServiceImpl userService;
+
+  @Mock private SetGooglePinUseCase setGooglePinUseCase;
 
   @InjectMocks private UserController userController;
 
@@ -297,5 +301,30 @@ class UserControllerTest {
         .andExpect(content().bytes(photoBytes));
 
     verify(userService, times(1)).getProfilePhoto(userId);
+  }
+
+  @Test
+  @DisplayName("Set Google PIN should return success")
+  void setGooglePin_ShouldReturnSuccess() throws Exception {
+    // Arrange
+    UUID userId = UUID.randomUUID();
+    setupSecurityContext(userId);
+
+    SetGooglePinRequest request = new SetGooglePinRequest("123456");
+    doNothing().when(setGooglePinUseCase).execute(eq(userId), any(SetGooglePinRequest.class));
+
+    // Act & Assert
+    mockMvc
+        .perform(
+            post("/users/set-google-pin")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.success").value(true));
+
+    verify(setGooglePinUseCase, times(1)).execute(eq(userId), any(SetGooglePinRequest.class));
+
+    // Cleanup
+    SecurityContextHolder.clearContext();
   }
 }
