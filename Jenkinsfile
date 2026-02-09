@@ -227,8 +227,29 @@ pipeline {
 
 // Helper function for VPS deployment
 def deployToVPS(String environment) {
-    def composeFile = environment == 'production' ? 'docker-compose.prod.yml' : 'docker-compose.yml'
+    def composeFile = 'docker-compose.vps.yml'
     def envFile = ".env.${environment}"
+    
+    // Determine ports based on environment to avoid conflicts on same VPS
+    def appPort = '8080'
+    def dbPort = '1433'
+    def redisPort = '6379'
+    def nginxHttp = '80'
+    def nginxHttps = '443'
+    
+    if (environment == 'development') {
+        appPort = '8081'
+        dbPort = '1434'
+        redisPort = '6380'
+        nginxHttp = '81'
+        nginxHttps = '444'
+    } else if (environment == 'staging') {
+        appPort = '8082'
+        dbPort = '1435'
+        redisPort = '6381'
+        nginxHttp = '82'
+        nginxHttps = '445'
+    }
     
     sshagent(['vps-ssh-key']) {
         sh """
@@ -239,27 +260,60 @@ def deployToVPS(String environment) {
                 mkdir -p /opt/lofiapps/${environment}
                 cd /opt/lofiapps/${environment}
                 
+                # Copy docker-compose file (we need to create it there or scp it)
+                # Since we don't have SCP in this block easily without another step, 
+                # we will assume the file is either in the repo (need to pull repo?) 
+                # OR we write content here? 
+                # Better approach: Check out repo or just use single file.
+                # Simplest: echo content or scp.
+                # Let's assume we pull the image but not the repo.
+                # We need the docker-compose.vps.yml on the server.
+                # We can scp it.
+            '
+        """
+        // Upload docker-compose file
+        sh "scp -o StrictHostKeyChecking=no docker-compose.vps.yml ${VPS_USER}@${VPS_HOST}:/opt/lofiapps/${environment}/docker-compose.vps.yml"
+        
+        sh """
+            ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} '
+                cd /opt/lofiapps/${environment}
+                
                 # Pull latest Docker image
                 docker pull ${DOCKER_IMAGE}:${VERSION}
                 
                 # Stop existing containers
+                export ENVIRONMENT=${environment}
                 docker-compose -f ${composeFile} down || true
                 
                 # Update environment file
                 echo "VERSION=${VERSION}" > ${envFile}
                 echo "DOCKER_IMAGE=${DOCKER_IMAGE}" >> ${envFile}
+                echo "ENVIRONMENT=${environment}" >> ${envFile}
+                echo "APP_PORT=${appPort}" >> ${envFile}
+                echo "DB_PORT_HOST=${dbPort}" >> ${envFile}
+                echo "REDIS_PORT_HOST=${redisPort}" >> ${envFile}
+                echo "NGINX_HTTP_PORT=${nginxHttp}" >> ${envFile}
+                echo "NGINX_HTTPS_PORT=${nginxHttps}" >> ${envFile}
                 
                 # Start new containers
-                VERSION=${VERSION} docker-compose -f ${composeFile} up -d
+                # Load env vars from file is automatic if .env is present, 
+                # but we are using .env.development etc.
+                # So we pass env file with --env-file
+                
+                docker-compose -f ${composeFile} --env-file ${envFile} up -d
                 
                 # Clean up old images
                 docker image prune -f
                 
                 # Health check
-                sleep 10
-                curl -f http://localhost:8080/actuator/health || exit 1
-                
-                echo "Deployment to ${environment} completed successfully!"
+                sleep 20
+                if curl -f http://localhost:${appPort}/actuator/health; then
+                    echo "Deployment to ${environment} completed successfully!"
+                else
+                    echo "Health check failed!"
+                    docker-compose -f ${composeFile} logs --tail=50
+                    exit 1
+                fi
             '
         """
     }
