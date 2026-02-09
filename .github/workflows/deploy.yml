@@ -63,7 +63,9 @@ jobs:
         username: ${{ secrets.VPS_USER }}
         key: ${{ secrets.VPS_SSH_KEY }}
         source: "docker-compose.vps.yml"
-        target: "/opt/${{ env.IMAGE_NAME }}/${{ env.ENVIRONMENT }}"
+        target: "apps/${{ env.IMAGE_NAME }}/${{ env.ENVIRONMENT }}"
+        debug: true
+        timeout: 30s
 
     - name: Deploy to VPS
       uses: appleboy/ssh-action@v0.1.10
@@ -71,6 +73,8 @@ jobs:
         host: ${{ secrets.VPS_HOST }}
         username: ${{ secrets.VPS_USER }}
         key: ${{ secrets.VPS_SSH_KEY }}
+        debug: true
+        timeout: 30s
         script: |
           # Define variables
           export ENVIRONMENT=${{ env.ENVIRONMENT }}
@@ -88,8 +92,9 @@ jobs:
             export REDIS_PORT_HOST=6380
           fi
           
-          # Setup directory
-          DEPLOY_DIR="/opt/${{ env.IMAGE_NAME }}/${{ env.ENVIRONMENT }}"
+          # Setup directory in USER HOME (no sudo needed)
+          # We use relative path 'apps/...' which means '~/apps/...'
+          DEPLOY_DIR="apps/${{ env.IMAGE_NAME }}/${{ env.ENVIRONMENT }}"
           mkdir -p $DEPLOY_DIR
           cd $DEPLOY_DIR
           
