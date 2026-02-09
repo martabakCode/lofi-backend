@@ -307,7 +307,7 @@ def deployToVPS(String environment) {
                 
                 # Health check
                 sleep 20
-                if curl -f http://localhost:${appPort}/actuator/health; then
+                if curl -f http://localhost:${appPort}/api/v1/actuator/health; then
                     echo "Deployment to ${environment} completed successfully!"
                 else
                     echo "Health check failed!"

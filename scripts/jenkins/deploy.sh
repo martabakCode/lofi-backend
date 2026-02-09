@@ -88,7 +88,7 @@ MAX_RETRIES=30
 RETRY_COUNT=0
 
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    if curl -sf http://localhost:8080/actuator/health > /dev/null 2>&1; then
+    if curl -sf http://localhost:8080/api/v1/actuator/health > /dev/null 2>&1; then
         log_info "Health check passed!"
         break
     fi
@@ -117,5 +117,5 @@ echo "Deployment Summary"
 echo "========================================"
 echo "Environment: ${ENVIRONMENT}"
 echo "Version: ${VERSION}"
-echo "Status: $(curl -s http://localhost:8080/actuator/health | grep -o '"status":"[^"]*"' | cut -d'"' -f4)"
+echo "Status: $(curl -s http://localhost:8080/api/v1/actuator/health | grep -o '"status":"[^"]*"' | cut -d'"' -f4)"
 echo "========================================"
