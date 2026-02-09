@@ -1,8 +1,8 @@
 name: VPS Deployment
 
 on:
-  push:
-    branches: [ "main", "develop" ]
+  # push:
+  #   branches: [ "main", "develop" ]
   workflow_dispatch:
 
 env:
@@ -63,7 +63,8 @@ jobs:
         username: ${{ secrets.VPS_USER }}
         key: ${{ secrets.VPS_SSH_KEY }}
         passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
-        source: "docker-compose.vps.yml"
+        # Copy docker-compose AND nginx configuration folder
+        source: "docker-compose.vps.yml,nginx"
         target: "apps/${{ env.IMAGE_NAME }}/${{ env.ENVIRONMENT }}"
         debug: true
         timeout: 30s
