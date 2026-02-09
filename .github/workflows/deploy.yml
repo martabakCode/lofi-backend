@@ -62,6 +62,7 @@ jobs:
         host: ${{ secrets.VPS_HOST }}
         username: ${{ secrets.VPS_USER }}
         key: ${{ secrets.VPS_SSH_KEY }}
+        passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
         source: "docker-compose.vps.yml"
         target: "apps/${{ env.IMAGE_NAME }}/${{ env.ENVIRONMENT }}"
         debug: true
@@ -73,6 +74,7 @@ jobs:
         host: ${{ secrets.VPS_HOST }}
         username: ${{ secrets.VPS_USER }}
         key: ${{ secrets.VPS_SSH_KEY }}
+        passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
         debug: true
         timeout: 30s
         script: |
