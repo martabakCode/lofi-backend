@@ -95,14 +95,14 @@ public class GlobalExceptionHandler {
         .body(ApiResponse.error("UNAUTHORIZED", "Invalid email or password", getDebugError(ex)));
   }
 
-  @ExceptionHandler({AccessDeniedException.class, SecurityException.class})
+  @ExceptionHandler({ AccessDeniedException.class, SecurityException.class })
   public ResponseEntity<ApiResponse<Object>> handleAccessDeniedException(RuntimeException ex) {
     log.error("Access denied: {}", ex.getMessage());
     return ResponseEntity.status(HttpStatus.FORBIDDEN)
         .body(ApiResponse.error("FORBIDDEN", ex.getMessage(), getDebugError(ex)));
   }
 
-  @ExceptionHandler({IllegalStateException.class, IllegalArgumentException.class})
+  @ExceptionHandler({ IllegalStateException.class, IllegalArgumentException.class })
   public ResponseEntity<ApiResponse<Object>> handleBadRequestExceptions(RuntimeException ex) {
     log.error("Bad request: {}", ex.getMessage());
     return ResponseEntity.badRequest()
@@ -134,6 +134,15 @@ public class GlobalExceptionHandler {
     log.error("Transaction system error", ex);
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
         .body(ApiResponse.error("TRANSACTION_ERROR", "Transaction failed", getDebugError(ex)));
+  }
+
+  @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+  public ResponseEntity<ApiResponse<Object>> handleNoResourceFoundException(
+      org.springframework.web.servlet.resource.NoResourceFoundException ex) {
+    // Only log at info/debug level to avoid spamming error logs for simple 404s
+    log.info("No resource found: {}", ex.getResourcePath());
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body(ApiResponse.error("NOT_FOUND", "Resource not found", null));
   }
 
   @ExceptionHandler(Exception.class)
