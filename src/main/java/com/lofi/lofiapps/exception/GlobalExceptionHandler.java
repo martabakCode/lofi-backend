@@ -95,14 +95,14 @@ public class GlobalExceptionHandler {
         .body(ApiResponse.error("UNAUTHORIZED", "Invalid email or password", getDebugError(ex)));
   }
 
-  @ExceptionHandler({ AccessDeniedException.class, SecurityException.class })
+  @ExceptionHandler({AccessDeniedException.class, SecurityException.class})
   public ResponseEntity<ApiResponse<Object>> handleAccessDeniedException(RuntimeException ex) {
     log.error("Access denied: {}", ex.getMessage());
     return ResponseEntity.status(HttpStatus.FORBIDDEN)
         .body(ApiResponse.error("FORBIDDEN", ex.getMessage(), getDebugError(ex)));
   }
 
-  @ExceptionHandler({ IllegalStateException.class, IllegalArgumentException.class })
+  @ExceptionHandler({IllegalStateException.class, IllegalArgumentException.class})
   public ResponseEntity<ApiResponse<Object>> handleBadRequestExceptions(RuntimeException ex) {
     log.error("Bad request: {}", ex.getMessage());
     return ResponseEntity.badRequest()
