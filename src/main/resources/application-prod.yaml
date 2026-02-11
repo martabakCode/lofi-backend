@@ -1,0 +1,71 @@
+---
+server:
+  port: "${SERVER_PORT:8080}"
+  servlet:
+    context-path: "/api/v1"
+  forward-headers-strategy: "framework"
+spring:
+  servlet:
+    multipart:
+      max-file-size: "10MB"
+      max-request-size: "10MB"
+  datasource:
+    url: "jdbc:sqlserver://${DB_HOST}:${DB_PORT};databaseName=${DB_NAME};encrypt=true;trustServerCertificate=true"
+    username: "${DB_USERNAME}"
+    password: "${DB_PASSWORD}"
+    driver-class-name: "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: "validate"
+    properties:
+      hibernate:
+        dialect: "org.hibernate.dialect.SQLServerDialect"
+  data:
+    redis:
+      host: "${REDIS_HOST}"
+      port: "${REDIS_PORT:6379}"
+      password: "${REDIS_PASSWORD:}"
+      repositories:
+        enabled: false
+  cache:
+    type: "redis"
+  mail:
+    host: "${MAIL_HOST}"
+    port: "${MAIL_PORT:587}"
+    username: "${MAIL_USERNAME}"
+    password: "${MAIL_PASSWORD}"
+    properties:
+      mail:
+        smtp:
+          auth: "${MAIL_SMTP_AUTH:true}"
+          starttls:
+            enable: "${MAIL_SMTP_STARTTLS:true}"
+cloudflare:
+  r2:
+    access-key-id: "${CLOUDFLARE_R2_ACCESS_KEY_ID}"
+    secret-access-key: "${CLOUDFLARE_R2_SECRET_ACCESS_KEY}"
+    endpoint: "${CLOUDFLARE_R2_ENDPOINT}"
+    bucket-name: "${CLOUDFLARE_R2_BUCKET_NAME}"
+lofi:
+  app:
+    jwtSecret: "${JWT_SECRET}"
+    jwtExpirationMs: "${JWT_EXPIRATION_MS:86400000}"
+    jwtRefreshExpirationMs: "${JWT_REFRESH_EXPIRATION_MS:604800000}"
+  cors:
+    allowed-origins: "${FRONTEND_URL}"
+app:
+  storage:
+    bucket-name: "${CLOUDFLARE_R2_BUCKET_NAME:lofi-bucket}"
+firebase:
+  project-id: "${FIREBASE_PROJECT_ID}"
+  private-key: "${FIREBASE_PRIVATE_KEY}"
+  client-email: "${FIREBASE_CLIENT_EMAIL}"
+oauth2:
+  google:
+    client-id: "${GOOGLE_CLIENT_ID}"
+    client-secret: "${GOOGLE_CLIENT_SECRET}"
+logging:
+  level:
+    root: "${LOGGING_LEVEL_ROOT:INFO}"
+    com.lofi: "${LOGGING_LEVEL_COM_LOFI:INFO}"

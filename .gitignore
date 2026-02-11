@@ -7,6 +7,15 @@ target/
 .env.example
 firebase-service-account.json
 
+### SSL Certificates ###
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+nginx/ssl/
+src/main/resources/ssl/
+
 ### STS ###
 .apt_generated
 .classpath
