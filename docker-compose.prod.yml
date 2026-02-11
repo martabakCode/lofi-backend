@@ -36,6 +36,7 @@ services:
       GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET}"
       APP_BASE_URL: "${APP_BASE_URL}"
       FRONTEND_URL: "${FRONTEND_URL}"
+      CORS_ALLOWED_ORIGINS: "${CORS_ALLOWED_ORIGINS:-http://localhost:4200,https://martabakcode.my.id}"
       LOGGING_LEVEL_ROOT: "${LOGGING_LEVEL:-INFO}"
       LOGGING_LEVEL_COM_LOFI: "${LOGGING_LEVEL_APP:-INFO}"
     depends_on:

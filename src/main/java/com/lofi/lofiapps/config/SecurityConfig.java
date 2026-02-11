@@ -30,7 +30,7 @@ public class SecurityConfig {
   private final AuthEntryPointJwt unauthorizedHandler;
   private final AuthTokenFilter authTokenFilter;
 
-  @Value("${lofi.cors.allowed-origins}")
+  @Value("${lofi.cors.allowed-origins:http://localhost:4200,http://localhost:3000}")
   private List<String> allowedOrigins;
 
   @Bean
