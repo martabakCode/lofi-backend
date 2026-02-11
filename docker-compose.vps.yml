@@ -39,6 +39,7 @@ services:
       FRONTEND_URL: "${FRONTEND_URL}"
       LOGGING_LEVEL_ROOT: "${LOGGING_LEVEL:-INFO}"
       LOGGING_LEVEL_COM_LOFI: "${LOGGING_LEVEL_APP:-INFO}"
+      CORS_ALLOWED_ORIGINS: "${CORS_ALLOWED_ORIGINS:-http://localhost:4200,https://martabakcode.my.id,https://*.martabakcode.my.id}"
     depends_on:
       redis:
         condition: "service_healthy"
