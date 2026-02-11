@@ -62,6 +62,24 @@ class RbacControllerTest {
   }
 
   @Test
+  @DisplayName("Get role by ID should return role")
+  void getRoleById_ShouldReturnRole() throws Exception {
+    UUID roleId = UUID.randomUUID();
+    RoleResponse response =
+        RoleResponse.builder().id(roleId).name(RoleName.ROLE_ADMIN).description("Admin").build();
+
+    when(rbacService.getRoleById(roleId)).thenReturn(response);
+
+    mockMvc
+        .perform(get("/rbac/roles/{roleId}", roleId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.success").value(true))
+        .andExpect(jsonPath("$.data.name").value("ROLE_ADMIN"));
+
+    verify(rbacService, times(1)).getRoleById(roleId);
+  }
+
+  @Test
   @DisplayName("Create role should return created role")
   void createRole_ShouldReturnCreatedRole() throws Exception {
     CreateRoleRequest request = new CreateRoleRequest();
@@ -253,6 +271,24 @@ class RbacControllerTest {
         .andExpect(jsonPath("$.success").value(true));
 
     verify(rbacService, times(1)).getBranches();
+  }
+
+  @Test
+  @DisplayName("Get branch by ID should return branch")
+  void getBranchById_ShouldReturnBranch() throws Exception {
+    UUID branchId = UUID.randomUUID();
+    BranchResponse response =
+        BranchResponse.builder().id(branchId).name("Main Branch").city("Jakarta").build();
+
+    when(rbacService.getBranchById(branchId)).thenReturn(response);
+
+    mockMvc
+        .perform(get("/rbac/branches/{branchId}", branchId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.success").value(true))
+        .andExpect(jsonPath("$.data.name").value("Main Branch"));
+
+    verify(rbacService, times(1)).getBranchById(branchId);
   }
 
   @Test

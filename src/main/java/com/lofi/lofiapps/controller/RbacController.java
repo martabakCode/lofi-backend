@@ -30,6 +30,14 @@ public class RbacController {
     return ResponseEntity.ok(ApiResponse.success(rbacService.getRoles(), "Roles retrieved"));
   }
 
+  @GetMapping("/roles/{roleId}")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+  @Operation(summary = "Get role by ID")
+  public ResponseEntity<ApiResponse<RoleResponse>> getRoleById(@PathVariable UUID roleId) {
+    return ResponseEntity.ok(
+        ApiResponse.success(rbacService.getRoleById(roleId), "Role retrieved"));
+  }
+
   @PostMapping("/roles")
   @PreAuthorize("hasRole('SUPER_ADMIN')")
   @Operation(summary = "Create a new role")
@@ -138,6 +146,14 @@ public class RbacController {
   @Operation(summary = "Get all branches")
   public ResponseEntity<ApiResponse<List<BranchResponse>>> getBranches() {
     return ResponseEntity.ok(ApiResponse.success(rbacService.getBranches(), "Branches retrieved"));
+  }
+
+  @GetMapping("/branches/{branchId}")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+  @Operation(summary = "Get branch by ID")
+  public ResponseEntity<ApiResponse<BranchResponse>> getBranchById(@PathVariable UUID branchId) {
+    return ResponseEntity.ok(
+        ApiResponse.success(rbacService.getBranchById(branchId), "Branch retrieved"));
   }
 
   @PostMapping("/branches")

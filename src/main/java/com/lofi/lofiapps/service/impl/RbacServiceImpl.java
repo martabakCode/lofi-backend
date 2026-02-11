@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RbacServiceImpl implements RbacService {
 
   private final GetRolesUseCase getRolesUseCase;
+  private final GetRoleByIdUseCase getRoleByIdUseCase;
   private final CreateRoleUseCase createRoleUseCase;
   private final UpdateRoleUseCase updateRoleUseCase;
   private final DeleteRoleUseCase deleteRoleUseCase;
@@ -27,6 +28,7 @@ public class RbacServiceImpl implements RbacService {
   private final AssignRolesToUserUseCase assignRolesToUserUseCase;
   private final RemoveRoleFromUserUseCase removeRoleFromUserUseCase;
   private final GetBranchesUseCase getBranchesUseCase;
+  private final GetBranchByIdUseCase getBranchByIdUseCase;
   private final CreateBranchUseCase createBranchUseCase;
   private final UpdateBranchUseCase updateBranchUseCase;
   private final DeleteBranchUseCase deleteBranchUseCase;
@@ -35,6 +37,12 @@ public class RbacServiceImpl implements RbacService {
   @Transactional(readOnly = true)
   public List<RoleResponse> getRoles() {
     return getRolesUseCase.execute();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public RoleResponse getRoleById(UUID roleId) {
+    return getRoleByIdUseCase.execute(roleId);
   }
 
   @Override
@@ -107,6 +115,12 @@ public class RbacServiceImpl implements RbacService {
   @Transactional(readOnly = true)
   public List<BranchResponse> getBranches() {
     return getBranchesUseCase.execute();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public BranchResponse getBranchById(UUID branchId) {
+    return getBranchByIdUseCase.execute(branchId);
   }
 
   @Override

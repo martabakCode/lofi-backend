@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class RbacServiceImplTest {
 
   @Mock private GetRolesUseCase getRolesUseCase;
+  @Mock private GetRoleByIdUseCase getRoleByIdUseCase;
   @Mock private CreateRoleUseCase createRoleUseCase;
   @Mock private UpdateRoleUseCase updateRoleUseCase;
   @Mock private DeleteRoleUseCase deleteRoleUseCase;
@@ -33,6 +34,7 @@ class RbacServiceImplTest {
   @Mock private AssignRolesToUserUseCase assignRolesToUserUseCase;
   @Mock private RemoveRoleFromUserUseCase removeRoleFromUserUseCase;
   @Mock private GetBranchesUseCase getBranchesUseCase;
+  @Mock private GetBranchByIdUseCase getBranchByIdUseCase;
   @Mock private CreateBranchUseCase createBranchUseCase;
   @Mock private UpdateBranchUseCase updateBranchUseCase;
   @Mock private DeleteBranchUseCase deleteBranchUseCase;
@@ -70,6 +72,28 @@ class RbacServiceImplTest {
     assertNotNull(result);
     assertEquals(2, result.size());
     verify(getRolesUseCase).execute();
+  }
+
+  @Test
+  @DisplayName("GetRoleById should delegate to GetRoleByIdUseCase")
+  void getRoleById_ShouldDelegateToUseCase() {
+    // Arrange
+    RoleResponse expectedRole =
+        RoleResponse.builder()
+            .id(roleId)
+            .name(RoleName.ROLE_ADMIN)
+            .description("Admin Role")
+            .build();
+
+    when(getRoleByIdUseCase.execute(roleId)).thenReturn(expectedRole);
+
+    // Act
+    RoleResponse result = rbacService.getRoleById(roleId);
+
+    // Assert
+    assertNotNull(result);
+    assertEquals(RoleName.ROLE_ADMIN, result.getName());
+    verify(getRoleByIdUseCase).execute(roleId);
   }
 
   @Test
@@ -268,6 +292,29 @@ class RbacServiceImplTest {
     assertNotNull(result);
     assertEquals(1, result.size());
     verify(getBranchesUseCase).execute();
+  }
+
+  @Test
+  @DisplayName("GetBranchById should delegate to GetBranchByIdUseCase")
+  void getBranchById_ShouldDelegateToUseCase() {
+    // Arrange
+    BranchResponse expectedBranch =
+        BranchResponse.builder()
+            .id(branchId)
+            .name("Main Branch")
+            .address("123 Street")
+            .city("Jakarta")
+            .build();
+
+    when(getBranchByIdUseCase.execute(branchId)).thenReturn(expectedBranch);
+
+    // Act
+    BranchResponse result = rbacService.getBranchById(branchId);
+
+    // Assert
+    assertNotNull(result);
+    assertEquals("Main Branch", result.getName());
+    verify(getBranchByIdUseCase).execute(branchId);
   }
 
   @Test

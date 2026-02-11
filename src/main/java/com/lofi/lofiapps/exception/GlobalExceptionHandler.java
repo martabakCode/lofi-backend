@@ -109,6 +109,13 @@ public class GlobalExceptionHandler {
         .body(ApiResponse.error("BAD_REQUEST", ex.getMessage(), getDebugError(ex)));
   }
 
+  @ExceptionHandler(RuntimeException.class)
+  public ResponseEntity<ApiResponse<Object>> handleRuntimeException(RuntimeException ex) {
+    log.error("Runtime error: {}", ex.getMessage());
+    return ResponseEntity.badRequest()
+        .body(ApiResponse.error("BAD_REQUEST", ex.getMessage(), getDebugError(ex)));
+  }
+
   @ExceptionHandler(ConstraintViolationException.class)
   public ResponseEntity<ApiResponse<Object>> handleConstraintViolationException(
       ConstraintViolationException ex) {

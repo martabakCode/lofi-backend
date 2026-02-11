@@ -9,6 +9,8 @@ public interface RbacService {
   // Roles
   List<RoleResponse> getRoles();
 
+  RoleResponse getRoleById(UUID roleId);
+
   RoleResponse createRole(CreateRoleRequest request);
 
   RoleResponse updateRole(UUID roleId, UpdateRoleRequest request);
@@ -36,6 +38,8 @@ public interface RbacService {
 
   // Branches
   List<BranchResponse> getBranches();
+
+  BranchResponse getBranchById(UUID branchId);
 
   BranchResponse createBranch(CreateBranchRequest request);
 
