@@ -29,6 +29,8 @@ public interface RbacService {
   // Users
   List<UserSummaryResponse> getUsers();
 
+  UserSummaryResponse getUserById(UUID userId);
+
   // User Roles
   List<RoleResponse> getUserRoles(UUID userId);
 

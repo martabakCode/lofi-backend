@@ -111,6 +111,14 @@ public class RbacController {
     return ResponseEntity.ok(ApiResponse.success(rbacService.getUsers(), "Users retrieved"));
   }
 
+  @GetMapping("/users/{userId}")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+  @Operation(summary = "Get user by ID for RBAC")
+  public ResponseEntity<ApiResponse<UserSummaryResponse>> getUserById(@PathVariable UUID userId) {
+    return ResponseEntity.ok(
+        ApiResponse.success(rbacService.getUserById(userId), "User retrieved"));
+  }
+
   // --- User-Role Mapping ---
 
   @GetMapping("/users/{userId}/roles")

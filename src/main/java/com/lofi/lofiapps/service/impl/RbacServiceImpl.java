@@ -24,6 +24,7 @@ public class RbacServiceImpl implements RbacService {
   private final AssignPermissionsToRoleUseCase assignPermissionsToRoleUseCase;
   private final RemovePermissionFromRoleUseCase removePermissionFromRoleUseCase;
   private final GetRbacUsersUseCase getRbacUsersUseCase;
+  private final GetRbacUserByIdUseCase getRbacUserByIdUseCase;
   private final GetUserRolesUseCase getUserRolesUseCase;
   private final AssignRolesToUserUseCase assignRolesToUserUseCase;
   private final RemoveRoleFromUserUseCase removeRoleFromUserUseCase;
@@ -91,6 +92,12 @@ public class RbacServiceImpl implements RbacService {
   @Transactional(readOnly = true)
   public List<UserSummaryResponse> getUsers() {
     return getRbacUsersUseCase.execute();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public UserSummaryResponse getUserById(UUID userId) {
+    return getRbacUserByIdUseCase.execute(userId);
   }
 
   @Override
