@@ -3,8 +3,7 @@ server:
   port: "${SERVER_PORT:8080}"
   servlet:
     context-path: "/api/v1"
-  forward-headers-strategy: framework
-
+  forward-headers-strategy: "framework"
 spring:
   servlet:
     multipart:
@@ -42,14 +41,12 @@ spring:
           auth: "${MAIL_SMTP_AUTH:true}"
           starttls:
             enable: "${MAIL_SMTP_STARTTLS:true}"
-
 cloudflare:
   r2:
     access-key-id: "${CLOUDFLARE_R2_ACCESS_KEY_ID}"
     secret-access-key: "${CLOUDFLARE_R2_SECRET_ACCESS_KEY}"
     endpoint: "${CLOUDFLARE_R2_ENDPOINT}"
     bucket-name: "${CLOUDFLARE_R2_BUCKET_NAME}"
-
 lofi:
   app:
     jwtSecret: "${JWT_SECRET}"
@@ -57,21 +54,17 @@ lofi:
     jwtRefreshExpirationMs: "${JWT_REFRESH_EXPIRATION_MS:604800000}"
   cors:
     allowed-origins: "${FRONTEND_URL}"
-
 app:
   storage:
     bucket-name: "${CLOUDFLARE_R2_BUCKET_NAME:lofi-bucket}"
-
 firebase:
   project-id: "${FIREBASE_PROJECT_ID}"
   private-key: "${FIREBASE_PRIVATE_KEY}"
   client-email: "${FIREBASE_CLIENT_EMAIL}"
-
 oauth2:
   google:
     client-id: "${GOOGLE_CLIENT_ID}"
     client-secret: "${GOOGLE_CLIENT_SECRET}"
-
 logging:
   level:
     root: "${LOGGING_LEVEL_ROOT:INFO}"
