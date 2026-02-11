@@ -771,15 +771,11 @@ public class DevelopmentDataSeeder {
   }
 
   private void initProducts() {
-    // Note: DataInitializer may have created KTA-001, we add more products here
     List<String> allowedCodes = List.of("BASIC", "STANDARD", "PREMIUM");
 
-    // Cleanup old products not in the new list (except KTA-001 from
-    // DataInitializer)
+    // Cleanup old products not in the new list
     productRepository.findAll().stream()
-        .filter(
-            p ->
-                !allowedCodes.contains(p.getProductCode()) && !"KTA-001".equals(p.getProductCode()))
+        .filter(p -> !allowedCodes.contains(p.getProductCode()))
         .forEach(
             p -> {
               productRepository.delete(p);

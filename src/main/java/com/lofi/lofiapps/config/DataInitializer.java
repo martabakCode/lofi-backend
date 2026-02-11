@@ -32,7 +32,6 @@ import org.springframework.transaction.annotation.Transactional;
  * <ul>
  *   <li>All RoleName enum values as Role entities
  *   <li>One default branch (Headquarters)
- *   <li>One default product (KTA-001)
  *   <li>One Super Admin user (admin@lofi.test)
  * </ul>
  *
