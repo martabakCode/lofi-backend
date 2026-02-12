@@ -63,7 +63,12 @@ public class DataInitializer {
       // 1. Permissions - idempotent
       Set<Permission> allPermissions = initPermissions();
 
+      // 2. Roles - idempotent
+      initRoles(allPermissions);
+
+      // 3. Branch - idempotent
       Branch branch = initBranch();
+
       // 4. Admin User - idempotent, creates only if admin doesn't exist
       initAdminUser(branch);
 
