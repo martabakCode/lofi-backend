@@ -3,7 +3,6 @@ package com.lofi.lofiapps.service;
 import com.lofi.lofiapps.entity.Loan;
 import com.lofi.lofiapps.entity.Product;
 import com.lofi.lofiapps.enums.LoanStatus;
-import com.lofi.lofiapps.exception.ResourceNotFoundException;
 import com.lofi.lofiapps.repository.LoanRepository;
 import com.lofi.lofiapps.repository.ProductRepository;
 import java.math.BigDecimal;
@@ -107,11 +106,12 @@ public class ProductCalculationService {
   private BigDecimal calculateWithoutCache(UUID userId, UUID productId) {
     BigDecimal approvedAmount = calculateTotalApprovedLoanAmount(userId);
 
-    Product product =
-        productRepository
-            .findById(productId)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Product", "id", productId.toString()));
+    Product product = productRepository.findById(productId).orElse(null);
+
+    if (product == null) {
+      log.warn("Product {} not found for user {}", productId, userId);
+      return BigDecimal.ZERO;
+    }
 
     return product.getMaxLoanAmount().subtract(approvedAmount).max(BigDecimal.ZERO);
   }

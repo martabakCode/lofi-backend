@@ -7,12 +7,14 @@ import com.lofi.lofiapps.repository.UserRepository;
 import com.lofi.lofiapps.security.jwt.JwtUtils;
 import com.lofi.lofiapps.security.service.UserPrincipal;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class LoginUseCase {
@@ -64,10 +66,19 @@ public class LoginUseCase {
     com.lofi.lofiapps.enums.LoanStatus activeLoanStatus = null;
     boolean hasSubmittedLoan = false;
 
-    if (user != null && user.getProduct() != null) {
-      availableLimit =
-          productCalculationService.calculateAvailableAmount(
-              user.getId(), user.getProduct().getId());
+    if (user != null) {
+      if (user.getProduct() != null) {
+        try {
+          availableLimit =
+              productCalculationService.calculateAvailableAmount(
+                  user.getId(), user.getProduct().getId());
+        } catch (Exception e) {
+          log.warn(
+              "Could not calculate available amount for user {} due to missing product or calculations error: {}",
+              user.getId(),
+              e.getMessage());
+        }
+      }
       hasSubmittedLoan = productCalculationService.hasActiveLoan(user.getId());
 
       java.util.List<com.lofi.lofiapps.entity.Loan> activeLoans =

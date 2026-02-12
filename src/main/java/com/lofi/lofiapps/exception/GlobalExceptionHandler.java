@@ -68,6 +68,14 @@ public class GlobalExceptionHandler {
         .body(ApiResponse.error("NOT_FOUND", ex.getMessage(), getDebugError(ex)));
   }
 
+  @ExceptionHandler(jakarta.persistence.EntityNotFoundException.class)
+  public ResponseEntity<ApiResponse<Object>> handleEntityNotFoundException(
+      jakarta.persistence.EntityNotFoundException ex) {
+    log.error("Entity not found: {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body(ApiResponse.error("NOT_FOUND", ex.getMessage(), getDebugError(ex)));
+  }
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ApiResponse<Object>> handleValidationExceptions(
       MethodArgumentNotValidException ex) {

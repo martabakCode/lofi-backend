@@ -77,9 +77,11 @@ public class SecurityConfig {
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
     configuration.setAllowedOriginPatterns(
-        allowedOrigins.stream()
-            .map(origin -> origin.endsWith("/") ? origin.substring(0, origin.length() - 1) : origin)
-            .toList());
+        List.of(
+            "http://localhost:*",
+            "https://lofi-frontend-*.vercel.app",
+            "https://lofiapi.martabakcode.my.id",
+            "https://*.martabakcode.my.id"));
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
     configuration.setAllowedHeaders(
         List.of(
