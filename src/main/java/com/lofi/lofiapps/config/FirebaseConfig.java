@@ -46,10 +46,14 @@ public class FirebaseConfig {
     }
 
     try (InputStream serviceAccount = resource.getInputStream()) {
+      GoogleCredentials credentials = GoogleCredentials.fromStream(serviceAccount);
+      String projectId =
+          (credentials instanceof com.google.auth.oauth2.ServiceAccountCredentials)
+              ? ((com.google.auth.oauth2.ServiceAccountCredentials) credentials).getProjectId()
+              : "lofi-41bc7";
+
       FirebaseOptions options =
-          FirebaseOptions.builder()
-              .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-              .build();
+          FirebaseOptions.builder().setCredentials(credentials).setProjectId(projectId).build();
 
       return FirebaseApp.initializeApp(options);
     } catch (IOException e) {

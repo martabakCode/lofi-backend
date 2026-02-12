@@ -75,6 +75,12 @@ public class GoogleLoginUseCase {
       user = userRepository.save(user);
     }
 
+    // Update FCM Token if present
+    if (request.getFcmToken() != null && !request.getFcmToken().isEmpty()) {
+      user.setFirebaseToken(request.getFcmToken());
+      user = userRepository.save(user);
+    }
+
     // Check user status before login
     if (user.getStatus() == UserStatus.INACTIVE) {
       throw new RuntimeException("User account is inactive. Please contact support.");

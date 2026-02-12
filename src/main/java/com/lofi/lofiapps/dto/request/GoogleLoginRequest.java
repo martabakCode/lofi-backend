@@ -7,6 +7,7 @@ import lombok.Data;
 public class GoogleLoginRequest {
   @NotBlank private String idToken;
 
+  private String fcmToken;
   private Double latitude;
   private Double longitude;
 }
