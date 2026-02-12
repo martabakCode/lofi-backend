@@ -8,6 +8,8 @@ import java.util.HashSet;
 import java.util.Set;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -24,6 +26,7 @@ public class User extends BaseEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "branch_id")
+  @NotFound(action = NotFoundAction.IGNORE)
   private Branch branch;
 
   @NotBlank(message = "Username is required")
@@ -76,6 +79,7 @@ public class User extends BaseEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "product_id")
+  @NotFound(action = NotFoundAction.IGNORE)
   private Product product;
 
   @Column(nullable = true)
